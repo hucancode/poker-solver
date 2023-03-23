@@ -289,7 +289,20 @@ pub struct Game {
     pub community: i64,
 }
 impl Game {
+    pub fn from_string(a: &String, b: &String, c: &String) -> Game {
+        Game {
+            hand_a: HandConverter::string_to_mask(a),
+            hand_b: HandConverter::string_to_mask(b),
+            community: HandConverter::string_to_mask(c),
+        }
+    }
     pub fn solve(&self, comparer: &HandComparer) -> (i32, i32, i32) {
+        if self.hand_a.count_ones() < 2 {
+            return (0,0,0);
+        }
+        if self.community.count_ones() < 3 {
+            return (0,0,0);
+        }
         let mut win = 0;
         let mut lose = 0;
         let mut tie = 0;
@@ -314,26 +327,47 @@ impl Game {
                 }
                 continue;
             }
-            let candidates = deck
+            let it = deck
                 .clone()
                 .filter(|x| x & board == 0);
-            if a.count_ones() < 2 {
-                for x in candidates {
-                    q.push_back((a | x, b, c));
-                }
-                continue;
-            }
             if b.count_ones() < 2 {
-                for x in candidates {
-                    q.push_back((a, b | x, c));
+                let mut it = it.clone();
+                while let Some(x) = it.next() {
+                    let b = b|x;
+                    if b.count_ones() >= 2 {
+                        q.push_back((a,b,c));
+                        continue;
+                    }
+                    let mut it = it.clone();
+                    while let Some(x) = it.next() {
+                        let b = b|x;
+                        q.push_back((a,b,c));
+                    }
                 }
                 continue;
             }
             if c.count_ones() < 5 {
-                for x in candidates {
-                    q.push_back((a, b, c | x));
+                let mut it = it.clone();
+                while let Some(x) = it.next() {
+                    let c = c|x;
+                    if c.count_ones() >= 5 {
+                        q.push_back((a,b,c));
+                        continue;
+                    }
+                    let mut it = it.clone();
+                    while let Some(x) = it.next() {
+                        let c = c|x;
+                        if c.count_ones() >= 5 {
+                            q.push_back((a,b,c));
+                            continue;
+                        }
+                        let mut it = it.clone();
+                        while let Some(x) = it.next() {
+                            let c = c|x;
+                            q.push_back((a,b,c));
+                        }
+                    }
                 }
-                continue;
             }
         }
         return (win, lose, tie);

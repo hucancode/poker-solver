@@ -1,7 +1,8 @@
 use std::cmp::min;
 use std::collections::VecDeque;
 
-const RANK_COUNT:i64 = 13;
+const RANK_COUNT: i64 = 13;
+const SUIT_COUNT: i64 = 4;
 
 pub enum CompareResult {
     AWin,
@@ -26,31 +27,31 @@ impl HandComparer {
         for rank in (3..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
             let mut arr_st: Vec<i64> = Vec::new();
-            const SUIT_5: i64 = 0b11<<(2*5);
+            const SUIT_5: i64 = 0b11 << (2 * 5);
             for suit in 0..SUIT_5 {
                 let mut mask: i64 = 0;
-                let card = rank * 4 + (suit & 0b11);
-                mask |= 1<<card;
-                let card = (rank - 1) * 4 + (suit<<2 & 0b11);
-                mask |= 1<<card;
-                let card = (rank - 2) * 4 + (suit<<4 & 0b11);
-                mask |= 1<<card;
-                let card = (rank - 3) * 4 + (suit<<6 & 0b11);
-                mask |= 1<<card;
+                let card = rank * SUIT_COUNT + (suit & 0b11);
+                mask |= 1 << card;
+                let card = (rank - 1) * SUIT_COUNT + (suit << 2 & 0b11);
+                mask |= 1 << card;
+                let card = (rank - 2) * SUIT_COUNT + (suit << 4 & 0b11);
+                mask |= 1 << card;
+                let card = (rank - 3) * SUIT_COUNT + (suit << 6 & 0b11);
+                mask |= 1 << card;
 
                 let low_ace = rank == 3;
                 if low_ace {
-                    let card = 12 * 4 + (suit<<8 & 0b11);
-                    mask = mask | 1<<card;
+                    let card = 12 * SUIT_COUNT + (suit << 8 & 0b11);
+                    mask = mask | 1 << card;
                 } else {
-                    let card = (rank - 4) * 4 + (suit<<8 & 0b11);
-                    mask = mask | 1<<card;
+                    let card = (rank - 4) * SUIT_COUNT + (suit << 8 & 0b11);
+                    mask = mask | 1 << card;
                 }
 
-                let same_suit = suit == 0b0000000000 ||
-                   suit == 0b0101010101 ||
-                   suit == 0b1010101010 ||
-                   suit == 0b1111111111;
+                let same_suit = suit == 0b0000000000
+                    || suit == 0b0101010101
+                    || suit == 0b1010101010
+                    || suit == 0b1111111111;
                 if same_suit {
                     arr_st.push(mask);
                 } else {
@@ -70,16 +71,16 @@ impl HandComparer {
                             let mut arr: Vec<i64> = Vec::new();
                             for suit in 0..4 {
                                 let mut mask: i64 = 0;
-                                let card = r0 * 4 + suit;
-                                mask |= 1<<card;
-                                let card = r1 * 4 + suit;
-                                mask |= 1<<card;
-                                let card = r2 * 4 + suit;
-                                mask |= 1<<card;
-                                let card = r3 * 4 + suit;
-                                mask |= 1<<card;
-                                let card = r4 * 4 + suit;
-                                mask |= 1<<card;
+                                let card = r0 * SUIT_COUNT + suit;
+                                mask |= 1 << card;
+                                let card = r1 * SUIT_COUNT + suit;
+                                mask |= 1 << card;
+                                let card = r2 * SUIT_COUNT + suit;
+                                mask |= 1 << card;
+                                let card = r3 * SUIT_COUNT + suit;
+                                mask |= 1 << card;
+                                let card = r4 * SUIT_COUNT + suit;
+                                mask |= 1 << card;
                                 arr.push(mask);
                             }
                             self.flush_hand.push(arr);
@@ -91,15 +92,13 @@ impl HandComparer {
     }
     fn build_quad_hand(&mut self) {
         for rank in (0..RANK_COUNT).rev() {
-            let mask: i64 = 0b1111 << (rank*4);
+            let mask: i64 = 0b1111 << (rank * SUIT_COUNT);
             self.quad_hand.push(vec![mask]);
         }
     }
     fn build_full_house_hand(&mut self) {
-        let suit2 = [0b1100,0b1010,0b1001,
-                    0b0110,0b0101,
-                    0b0011,];
-        let suit3 = [0b1110,0b1101,0b1011,0b0111];
+        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
+        let suit3 = [0b1110, 0b1101, 0b1011, 0b0111];
         for r1 in (0..RANK_COUNT).rev() {
             for r2 in (0..RANK_COUNT).rev() {
                 if r1 == r2 {
@@ -109,8 +108,8 @@ impl HandComparer {
                 for s1 in &suit3 {
                     for s2 in &suit2 {
                         let mut mask: i64 = 0;
-                        mask |= s1<<(r1*4);
-                        mask |= s2<<(r2*4);
+                        mask |= s1 << (r1 * SUIT_COUNT);
+                        mask |= s2 << (r2 * SUIT_COUNT);
                         arr.push(mask);
                     }
                 }
@@ -119,28 +118,26 @@ impl HandComparer {
         }
     }
     fn build_trip_hand(&mut self) {
-        let suit3 = [0b1110,0b1101,0b1011,0b0111];
+        let suit3 = [0b1110, 0b1101, 0b1011, 0b0111];
         for rank in (0..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
             for suit in &suit3 {
-                let mask: i64 = suit << (rank*4);
+                let mask: i64 = suit << (rank * SUIT_COUNT);
                 arr.push(mask);
             }
             self.trip_hand.push(arr);
         }
     }
     fn build_two_pair_hand(&mut self) {
-        let suit2 = [0b1100,0b1010,0b1001,
-                    0b0110,0b0101,
-                    0b0011];
+        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
         for r1 in (0..RANK_COUNT).rev() {
             for r2 in (0..r1).rev() {
                 let mut arr: Vec<i64> = Vec::new();
                 for s1 in &suit2 {
                     for s2 in &suit2 {
                         let mut mask: i64 = 0;
-                        mask |= s1<<(r1*4);
-                        mask |= s2<<(r2*4);
+                        mask |= s1 << (r1 * SUIT_COUNT);
+                        mask |= s2 << (r2 * SUIT_COUNT);
                         arr.push(mask);
                     }
                 }
@@ -149,13 +146,11 @@ impl HandComparer {
         }
     }
     fn build_pair_hand(&mut self) {
-        let suit2 = [0b1100,0b1010,0b1001,
-                    0b0110,0b0101,
-                    0b0011];
+        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
         for rank in (0..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
             for suit in &suit2 {
-                let mask:i64 = suit<<(rank*4);
+                let mask: i64 = suit << (rank * SUIT_COUNT);
                 arr.push(mask);
             }
             self.pair_hand.push(arr);
@@ -166,13 +161,13 @@ impl HandComparer {
     fn get_highest_bit(mask: &i64, count: usize) -> i64 {
         let mut count = count;
         let mut ret: i64 = 0;
-        let mut k: i64 = 1<<51;
+        let mut k: i64 = 1 << 51;
         while k != 0 && count != 0 {
             if (mask & k) != 0 {
                 ret |= k;
-                count-=1;
+                count -= 1;
             }
-            k = k>>1;
+            k = k >> 1;
         }
         return ret;
     }
@@ -206,10 +201,10 @@ impl HandComparer {
             match Self::get_rank_in(mask, pool) {
                 Some((pattern, minor_rank)) => {
                     return (major_rank, minor_rank, pattern);
-                },
+                }
                 None => {
                     major_rank += 1;
-                },
+                }
             }
         }
         return (major_rank, 0, 0);
@@ -229,8 +224,8 @@ impl HandComparer {
 
     fn compare_high_card(hand_a: &i64, hand_b: &i64) -> CompareResult {
         for rank in (0..RANK_COUNT).rev() {
-            let a_matched = (hand_a & 0b1111<<(rank*4)) != 0;
-            let b_matched = (hand_b & 0b1111<<(rank*4)) != 0;
+            let a_matched = (hand_a & 0b1111 << (rank * SUIT_COUNT)) != 0;
+            let b_matched = (hand_b & 0b1111 << (rank * SUIT_COUNT)) != 0;
             if a_matched == b_matched {
                 continue;
             }
@@ -270,14 +265,14 @@ impl HandComparer {
 pub struct HandConverter;
 impl HandConverter {
     pub fn string_to_mask(hand: &String) -> i64 {
-        let ranks: String = String::from("23456789TJQKA"); 
-        let suits: String = String::from("scdh"); 
+        let ranks: String = String::from("23456789TJQKA");
+        let suits: String = String::from("scdh");
         let mut ret: i64 = 0;
         let mut i = hand.chars();
         while let Some((cr, cs)) = i.next().zip(i.next()) {
             let r = ranks.find(cr).unwrap_or_default();
             let s = suits.find(cs).unwrap_or_default();
-            ret |= 1<<(r*4+s);
+            ret |= 1 << (r * SUIT_COUNT as usize + s);
         }
         return ret;
     }
@@ -298,50 +293,40 @@ impl Game {
     }
     pub fn solve(&self, comparer: &HandComparer) -> (i32, i32, i32) {
         if self.hand_a.count_ones() < 2 {
-            return (0,0,0);
+            return (0, 0, 0);
         }
         if self.community.count_ones() < 3 {
-            return (0,0,0);
+            return (0, 0, 0);
         }
         let mut win = 0;
         let mut lose = 0;
         let mut tie = 0;
         let mut q = VecDeque::new();
         q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..52)
-            .into_iter()
-            .map(|x| 1<<x);
+        let deck = (0..52).into_iter().map(|x| 1 << x);
         while let Some((a, b, c)) = q.pop_front() {
-            let board = a|b|c;
+            let board = a | b | c;
             if board.count_ones() >= 9 {
-                match comparer.compare(a|c, b|c) {
-                    CompareResult::AWin => {
-                        win += 1
-                    },
-                    CompareResult::BWin => {
-                        lose += 1
-                    },
-                    CompareResult::Tie => {
-                        tie += 1
-                    },
+                match comparer.compare(a | c, b | c) {
+                    CompareResult::AWin => win += 1,
+                    CompareResult::BWin => lose += 1,
+                    CompareResult::Tie => tie += 1,
                 }
                 continue;
             }
-            let it = deck
-                .clone()
-                .filter(|x| x & board == 0);
+            let it = deck.clone().filter(|x| x & board == 0);
             if b.count_ones() < 2 {
                 let mut it = it.clone();
                 while let Some(x) = it.next() {
-                    let b = b|x;
+                    let b = b | x;
                     if b.count_ones() >= 2 {
-                        q.push_back((a,b,c));
+                        q.push_back((a, b, c));
                         continue;
                     }
                     let mut it = it.clone();
                     while let Some(x) = it.next() {
-                        let b = b|x;
-                        q.push_back((a,b,c));
+                        let b = b | x;
+                        q.push_back((a, b, c));
                     }
                 }
                 continue;
@@ -349,22 +334,22 @@ impl Game {
             if c.count_ones() < 5 {
                 let mut it = it.clone();
                 while let Some(x) = it.next() {
-                    let c = c|x;
+                    let c = c | x;
                     if c.count_ones() >= 5 {
-                        q.push_back((a,b,c));
+                        q.push_back((a, b, c));
                         continue;
                     }
                     let mut it = it.clone();
                     while let Some(x) = it.next() {
-                        let c = c|x;
+                        let c = c | x;
                         if c.count_ones() >= 5 {
-                            q.push_back((a,b,c));
+                            q.push_back((a, b, c));
                             continue;
                         }
                         let mut it = it.clone();
                         while let Some(x) = it.next() {
-                            let c = c|x;
-                            q.push_back((a,b,c));
+                            let c = c | x;
+                            q.push_back((a, b, c));
                         }
                     }
                 }

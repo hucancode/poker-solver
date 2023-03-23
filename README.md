@@ -17,6 +17,9 @@ Example
 cargo run -- 2s3s4d6s7s AsAd KsQs
 cargo run -- 2s3s4d AsAd 
 cargo run -- 2s3s4d3d AsAd 
+
+# or you can run it directly like this
+./poker-solver 2s3s4d3d AsAd
 ```
 Where
 - Community cards consist of 3-5 cards

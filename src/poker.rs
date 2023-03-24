@@ -161,7 +161,7 @@ impl HandComparer {
     fn get_highest_bit(mask: &i64, count: usize) -> i64 {
         let mut count = count;
         let mut ret: i64 = 0;
-        let mut k: i64 = 1 << 51;
+        let mut k: i64 = 1 << (RANK_COUNT * SUIT_COUNT - 1);
         while k != 0 && count != 0 {
             if (mask & k) != 0 {
                 ret |= k;
@@ -303,7 +303,7 @@ impl Game {
         let mut tie = 0;
         let mut q = VecDeque::new();
         q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..52).into_iter().map(|x| 1 << x);
+        let deck = (0..(RANK_COUNT * SUIT_COUNT)).into_iter().map(|x| 1 << x);
         while let Some((a, b, c)) = q.pop_front() {
             let board = a | b | c;
             if board.count_ones() >= 9 {
@@ -353,6 +353,7 @@ impl Game {
                         }
                     }
                 }
+                continue;
             }
         }
         return (win, lose, tie);

@@ -11,7 +11,7 @@ pub enum CompareResult {
 }
 
 #[derive(Default)]
-pub struct HandComparer {
+pub struct HandEvaluator {
     straight_flush_hand: Vec<Vec<i64>>,
     quad_hand: Vec<Vec<i64>>,
     full_house_hand: Vec<Vec<i64>>,
@@ -22,7 +22,7 @@ pub struct HandComparer {
     pair_hand: Vec<Vec<i64>>,
 }
 
-impl HandComparer {
+impl HandEvaluator {
     fn build_straight_hand(&mut self) {
         for rank in (3..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
@@ -282,16 +282,30 @@ pub struct Game {
     pub hand_a: i64,
     pub hand_b: i64,
     pub community: i64,
+    evaluator: HandEvaluator,
 }
 impl Game {
-    pub fn from_string(a: &str, b: &str, c: &str) -> Self {
+    pub fn new() -> Self {
         Self {
-            hand_a: HandConverter::string_to_mask(a),
-            hand_b: HandConverter::string_to_mask(b),
-            community: HandConverter::string_to_mask(c),
+            hand_a: 0,
+            hand_b: 0,
+            community: 0,
+            evaluator: HandEvaluator::new(),
         }
     }
-    pub fn solve(&self, comparer: &HandComparer) -> (i32, i32, i32) {
+    pub fn with_hand_a(mut self, a: &str) -> Self {
+        self.hand_a = HandConverter::string_to_mask(a); 
+        self
+    }
+    pub fn with_hand_b(mut self, b: &str) -> Self {
+        self.hand_b = HandConverter::string_to_mask(b); 
+        self
+    }
+    pub fn with_community(mut self, c: &str) -> Self{
+        self.community = HandConverter::string_to_mask(c); 
+        self
+    }
+    pub fn solve(&self) -> (i32, i32, i32) {
         let mut win = 0;
         let mut lose = 0;
         let mut tie = 0;
@@ -301,7 +315,7 @@ impl Game {
         while let Some((a, b, c)) = q.pop_front() {
             let board = a | b | c;
             if board.count_ones() >= 9 {
-                match comparer.compare(a | c, b | c) {
+                match self.evaluator.compare(a | c, b | c) {
                     CompareResult::AWin => win += 1,
                     CompareResult::BWin => lose += 1,
                     CompareResult::Tie => tie += 1,

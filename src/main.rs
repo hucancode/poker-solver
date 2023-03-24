@@ -1,6 +1,5 @@
 mod poker;
 use poker::Game;
-use poker::HandComparer;
 use std::env;
 
 fn main() {
@@ -16,9 +15,11 @@ fn main() {
         Their hand:      {:>12}\n",
         community, hand_a, hand_b
     );
-    let comparer = HandComparer::new();
-    let game = Game::from_string(hand_a, hand_b, community);
-    let (win, lose, tie) = game.solve(&comparer);
+    let game = Game::new()
+        .with_hand_a(hand_a)
+        .with_hand_b(hand_b)
+        .with_community(community);
+    let (win, lose, tie) = game.solve();
     let win_rate = win as f32 / (win + lose + tie) as f32 * 100.0;
     println!(
         "_____________________________\n\

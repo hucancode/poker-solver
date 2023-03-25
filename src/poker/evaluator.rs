@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn vs_aaaaq_aaaak() {
-        let evaluator: HandEvaluator = HandEvaluator::new();
+        let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("AsAcAdAhQh3s4s"),
             hand::from_string("AsAcAdAhQhKh3d"),
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn vs_34567_56789() {
-        let evaluator: HandEvaluator = HandEvaluator::new();
+        let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("5s6d7h3d4cTdJc"),
             hand::from_string("5s6d7h9c8cTdJc"),
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn vs_333kk_333kk() {
-        let evaluator: HandEvaluator = HandEvaluator::new();
+        let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("3s3d3hKdKc6d9c"),
             hand::from_string("3s3d3hKhKs6d9c"),

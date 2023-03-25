@@ -175,10 +175,8 @@ impl HandEvaluator {
     // pattern, order
     fn get_rank_in(mask: &i64, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
         for (rank, arr) in pool.iter().enumerate() {
-            for pattern in arr.iter() {
-                if (mask & (*pattern)) == *pattern {
-                    return Some((*pattern, rank as i32));
-                }
+            if let Some(pattern) = arr.iter().find(|&&x| (mask & x) == x) {
+                return Some((*pattern, rank as i32));
             }
         }
         None
@@ -198,14 +196,10 @@ impl HandEvaluator {
             &self.pair_hand,
         ];
         for pool in &pools {
-            match Self::get_rank_in(mask, pool) {
-                Some((pattern, minor_rank)) => {
-                    return (major_rank, minor_rank, pattern);
-                }
-                None => {
-                    major_rank += 1;
-                }
+            if let Some((pattern, minor_rank)) = Self::get_rank_in(mask, pool) {
+                return (major_rank, minor_rank, pattern);
             }
+            major_rank += 1;
         }
         (major_rank, 0, 0)
     }
@@ -294,15 +288,15 @@ impl Game {
         }
     }
     pub fn with_hand_a(mut self, a: &str) -> Self {
-        self.hand_a = HandConverter::string_to_mask(a); 
+        self.hand_a = HandConverter::string_to_mask(a);
         self
     }
     pub fn with_hand_b(mut self, b: &str) -> Self {
-        self.hand_b = HandConverter::string_to_mask(b); 
+        self.hand_b = HandConverter::string_to_mask(b);
         self
     }
-    pub fn with_community(mut self, c: &str) -> Self{
-        self.community = HandConverter::string_to_mask(c); 
+    pub fn with_community(mut self, c: &str) -> Self {
+        self.community = HandConverter::string_to_mask(c);
         self
     }
     pub fn solve(&self) -> (i32, i32, i32) {

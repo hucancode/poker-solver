@@ -25,7 +25,18 @@ Where
 - Community cards consist of 3-5 cards
 - Your hand consist of 2 cards
 - Their hand consist of 0-2 cards
-The program will output all possible game outcomes.
+The program will output all possible game outcomes. Here is an example:
+
+```
+🎴 Community cards:       2♠3♠7♠
+🎴 Your hand:               A♠A♦
+🎴 Their hand:
+
+👑 Win:                   976740
+💸 Lose:                   92820
+🤝 Tie:                      630
+🧮 You win:            91.26791%
+```
 
 ## Card notation
 

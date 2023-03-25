@@ -158,7 +158,7 @@ impl HandEvaluator {
     }
 
     // pattern, order
-    fn get_rank_in(mask: &i64, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
+    fn get_rank_in(mask: i64, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
         for (rank, arr) in pool.iter().enumerate() {
             if let Some(pattern) = arr.iter().find(|&&x| (mask & x) == x) {
                 return Some((*pattern, rank as i32));
@@ -168,7 +168,7 @@ impl HandEvaluator {
     }
 
     // major rank, minor rank, matched pattern
-    fn get_strongest_5(&self, mask: &i64) -> (i32, i32, i64) {
+    fn get_strongest_5(&self, mask: i64) -> (i32, i32, i64) {
         let mut major_rank = 0;
         let pools = [
             &self.straight_flush_hand,
@@ -219,8 +219,8 @@ impl HandEvaluator {
     }
 
     pub fn compare(&self, hand_a: i64, hand_b: i64) -> CompareResult {
-        let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(&hand_a);
-        let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(&hand_b);
+        let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(hand_a);
+        let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(hand_b);
         if rank_major_a < rank_major_b {
             return CompareResult::AWin;
         }
@@ -246,6 +246,99 @@ impl HandEvaluator {
 mod tests {
     use super::*;
     use crate::hand;
+
+    #[test]
+    fn straight_flush_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsKsQsJsTs");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 0);
+        assert_eq!(rank_minor_a, 0);
+        let input = hand::from_string("KsQsJsTs9s");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 0);
+        assert_eq!(rank_minor_a, 1);
+    }
+
+    #[test]
+    fn quad_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsAcAdAh");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 1);
+        assert_eq!(rank_minor_a, 0);
+        let input = hand::from_string("KsKcKdKh");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 1);
+        assert_eq!(rank_minor_a, 1);
+    }
+    #[test]
+    fn full_house_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsAcAdKhKs");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 2);
+        assert_eq!(rank_minor_a, 0);
+        let input = hand::from_string("AsAcAdQhQs");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 2);
+        assert_eq!(rank_minor_a, 1);
+    }
+    #[test]
+    fn flush_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("As2s6sTs4s");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 3);
+    }
+    #[test]
+    fn straight_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("As2c3d4h5d");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 4);
+        let input = hand::from_string("2c3d4h5d6s");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 4);
+    }
+    #[test]
+    fn trip_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsAcAd");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 5);
+        assert_eq!(rank_minor_a, 0);
+        let input = hand::from_string("KsKcKd");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 5);
+        assert_eq!(rank_minor_a, 1);
+    }
+    #[test]
+    fn pair2_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsAcKdKh");
+        let (rank_major_a, rank_minor_a, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 6);
+        assert_eq!(rank_minor_a, 0);
+    }
+    #[test]
+    fn pair_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsAc");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 7);
+        let input = hand::from_string("2s2c");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 7);
+    }
+
+    #[test]
+    fn high_card_check() {
+        let evaluator = HandEvaluator::new();
+        let input = hand::from_string("AsKc5s8d9d");
+        let (rank_major_a, _, _) = evaluator.get_strongest_5(input);
+        assert_eq!(rank_major_a, 8);
+    }
 
     #[test]
     fn vs_aaaaq_aaaak() {

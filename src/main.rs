@@ -1,5 +1,6 @@
 mod poker;
 use poker::Game;
+use poker::HandConverter;
 use std::env;
 
 fn main() {
@@ -13,7 +14,9 @@ fn main() {
         Community cards: {:>12}\n\
         Your hand:       {:>12}\n\
         Their hand:      {:>12}\n",
-        community, hand_a, hand_b
+        HandConverter::pretify(community),
+        HandConverter::pretify(hand_a),
+        HandConverter::pretify(hand_b),
     );
     let game = Game::new()
         .with_hand_a(hand_a)

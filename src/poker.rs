@@ -1,4 +1,5 @@
 use std::cmp::min;
+use std::collections::HashMap;
 use std::collections::VecDeque;
 
 const RANK_COUNT: i64 = 13;
@@ -269,6 +270,18 @@ impl HandConverter {
             ret |= 1 << (r * SUIT_COUNT as usize + s);
         }
         ret
+    }
+    pub fn pretify(hand: &str) -> String {
+        let map = HashMap::from([
+            ('T', String::from("10")),
+            ('s', String::from("♠")),
+            ('c', String::from("♣")),
+            ('d', String::from("♦")),
+            ('h', String::from("♥")),
+        ]);
+        return hand.chars().fold(String::new(), |acc, x| {
+            acc + map.get(&x).unwrap_or(&String::from(x))
+        });
     }
 }
 #[derive(Default)]

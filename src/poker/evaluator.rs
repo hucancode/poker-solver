@@ -1,9 +1,8 @@
-use std::cmp::min;
-use std::collections::HashMap;
-use std::collections::VecDeque;
+use crate::hand;
+use crate::hand::RANK_COUNT;
+use crate::hand::SUIT_COUNT;
 
-const RANK_COUNT: i64 = 13;
-const SUIT_COUNT: i64 = 4;
+use std::cmp::min;
 
 pub enum CompareResult {
     AWin,
@@ -33,19 +32,19 @@ impl HandEvaluator {
                 let mut mask: i64 = 0;
                 let card = rank * SUIT_COUNT + (suit & 0b11);
                 mask |= 1 << card;
-                let card = (rank - 1) * SUIT_COUNT + (suit << 2 & 0b11);
+                let card = (rank - 1) * SUIT_COUNT + (suit >> 2 & 0b11);
                 mask |= 1 << card;
-                let card = (rank - 2) * SUIT_COUNT + (suit << 4 & 0b11);
+                let card = (rank - 2) * SUIT_COUNT + (suit >> 4 & 0b11);
                 mask |= 1 << card;
-                let card = (rank - 3) * SUIT_COUNT + (suit << 6 & 0b11);
+                let card = (rank - 3) * SUIT_COUNT + (suit >> 6 & 0b11);
                 mask |= 1 << card;
 
                 let low_ace = rank == 3;
                 if low_ace {
-                    let card = 12 * SUIT_COUNT + (suit << 8 & 0b11);
+                    let card = 12 * SUIT_COUNT + (suit >> 8 & 0b11);
                     mask |= 1 << card;
                 } else {
-                    let card = (rank - 4) * SUIT_COUNT + (suit << 8 & 0b11);
+                    let card = (rank - 4) * SUIT_COUNT + (suit >> 8 & 0b11);
                     mask |= 1 << card;
                 }
 
@@ -157,21 +156,6 @@ impl HandEvaluator {
             self.pair_hand.push(arr);
         }
     }
-    // return `count` highest bit from `mask`
-    // get_highest_bit(0b10101111111, 2) => 0b10100000000
-    fn get_highest_bit(mask: &i64, count: usize) -> i64 {
-        let mut count = count;
-        let mut ret: i64 = 0;
-        let mut k: i64 = 1 << (RANK_COUNT * SUIT_COUNT - 1);
-        while k != 0 && count != 0 {
-            if (mask & k) != 0 {
-                ret |= k;
-                count -= 1;
-            }
-            k >>= 1;
-        }
-        ret
-    }
 
     // pattern, order
     fn get_rank_in(mask: &i64, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
@@ -251,116 +235,45 @@ impl HandEvaluator {
         }
         let k = (5 - min(5, pattern_a.count_ones())) as usize;
         let hand_a = hand_a & (!pattern_a);
-        let hand_a = Self::get_highest_bit(&hand_a, k);
+        let hand_a = hand::get_highest_card(hand_a, k);
         let hand_b = hand_b & (!pattern_b);
-        let hand_b = Self::get_highest_bit(&hand_b, k);
+        let hand_b = hand::get_highest_card(hand_b, k);
         Self::compare_high_card(&hand_a, &hand_b)
     }
 }
-pub struct HandConverter;
-impl HandConverter {
-    pub fn string_to_mask(hand: &str) -> i64 {
-        let ranks = String::from("23456789TJQKA");
-        let suits = String::from("scdh");
-        let mut ret: i64 = 0;
-        let mut i = hand.chars();
-        while let Some((cr, cs)) = i.next().zip(i.next()) {
-            let r = ranks.find(cr).unwrap_or_default();
-            let s = suits.find(cs).unwrap_or_default();
-            ret |= 1 << (r * SUIT_COUNT as usize + s);
-        }
-        ret
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::hand;
+
+    #[test]
+    fn vs_aaaaq_aaaak() {
+        let evaluator: HandEvaluator = HandEvaluator::new();
+        let output = evaluator.compare(
+            hand::from_string("AsAcAdAhQh3s4s"),
+            hand::from_string("AsAcAdAhQhKh3d"),
+        );
+        assert!(matches!(output, CompareResult::BWin));
     }
-    pub fn pretify(hand: &str) -> String {
-        let map = HashMap::from([
-            ('T', String::from("10")),
-            ('s', String::from("♠")),
-            ('c', String::from("♣")),
-            ('d', String::from("♦")),
-            ('h', String::from("♥")),
-        ]);
-        return hand.chars().fold(String::new(), |acc, x| {
-            acc + map.get(&x).unwrap_or(&String::from(x))
-        });
+
+    #[test]
+    fn vs_34567_56789() {
+        let evaluator: HandEvaluator = HandEvaluator::new();
+        let output = evaluator.compare(
+            hand::from_string("5s6d7h3d4cTdJc"),
+            hand::from_string("5s6d7h9c8cTdJc"),
+        );
+        assert!(matches!(output, CompareResult::BWin));
     }
-}
-#[derive(Default)]
-pub struct Game {
-    pub hand_a: i64,
-    pub hand_b: i64,
-    pub community: i64,
-    evaluator: HandEvaluator,
-}
-impl Game {
-    pub fn new() -> Self {
-        Self {
-            hand_a: 0,
-            hand_b: 0,
-            community: 0,
-            evaluator: HandEvaluator::new(),
-        }
-    }
-    pub fn with_hand_a(mut self, a: &str) -> Self {
-        self.hand_a = HandConverter::string_to_mask(a);
-        self
-    }
-    pub fn with_hand_b(mut self, b: &str) -> Self {
-        self.hand_b = HandConverter::string_to_mask(b);
-        self
-    }
-    pub fn with_community(mut self, c: &str) -> Self {
-        self.community = HandConverter::string_to_mask(c);
-        self
-    }
-    pub fn solve(&self) -> (i32, i32, i32) {
-        let mut win = 0;
-        let mut lose = 0;
-        let mut tie = 0;
-        let mut q = VecDeque::new();
-        q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| 1 << x);
-        while let Some((a, b, c)) = q.pop_front() {
-            let board = a | b | c;
-            if board.count_ones() >= 9 {
-                match self.evaluator.compare(a | c, b | c) {
-                    CompareResult::AWin => win += 1,
-                    CompareResult::BWin => lose += 1,
-                    CompareResult::Tie => tie += 1,
-                }
-                continue;
-            }
-            let it = deck.clone().filter(|x| x & board == 0);
-            if b.count_ones() < 2 {
-                let mut bq = VecDeque::new();
-                bq.push_back((it, b));
-                while let Some((it, b)) = bq.pop_front() {
-                    if b.count_ones() == 2 {
-                        q.push_back((a, b, c));
-                        continue;
-                    }
-                    let mut it = it.clone();
-                    while let Some(x) = it.next() {
-                        bq.push_back((it.clone(), b | x));
-                    }
-                }
-                continue;
-            }
-            if c.count_ones() < 5 {
-                let mut cq = VecDeque::new();
-                cq.push_back((it, c));
-                while let Some((it, c)) = cq.pop_front() {
-                    if c.count_ones() == 5 {
-                        q.push_back((a, b, c));
-                        continue;
-                    }
-                    let mut it = it.clone();
-                    while let Some(x) = it.next() {
-                        cq.push_back((it.clone(), c | x));
-                    }
-                }
-                continue;
-            }
-        }
-        (win, lose, tie)
+
+    #[test]
+    fn vs_333kk_333kk() {
+        let evaluator: HandEvaluator = HandEvaluator::new();
+        let output = evaluator.compare(
+            hand::from_string("3s3d3hKdKc6d9c"),
+            hand::from_string("3s3d3hKhKs6d9c"),
+        );
+        assert!(matches!(output, CompareResult::Tie));
     }
 }

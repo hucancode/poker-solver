@@ -10,3 +10,11 @@ rand = "0.8"
 
 [profile.release]
 lto = true
+
+[lib]
+name = "poker"
+path = "src/poker/mod.rs"
+
+[[bin]]
+name = "poker-exe"
+path = "src/main.rs"

@@ -25,6 +25,7 @@ Where
 - Community cards consist of 3-5 cards
 - Your hand consist of 2 cards
 - Their hand consist of 0-2 cards
+
 The program will output all possible game outcomes. Here is an example:
 
 ```

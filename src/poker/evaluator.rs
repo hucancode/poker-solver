@@ -201,7 +201,7 @@ impl HandEvaluator {
         ret
     }
 
-    fn compare_high_card(hand_a: &i64, hand_b: &i64) -> CompareResult {
+    fn compare_high_card(hand_a: i64, hand_b: i64) -> CompareResult {
         for rank in (0..RANK_COUNT).rev() {
             let a_matched = (hand_a & 0b1111 << (rank * SUIT_COUNT)) != 0;
             let b_matched = (hand_b & 0b1111 << (rank * SUIT_COUNT)) != 0;
@@ -238,7 +238,7 @@ impl HandEvaluator {
         let hand_a = hand::get_highest_card(hand_a, k);
         let hand_b = hand_b & (!pattern_b);
         let hand_b = hand::get_highest_card(hand_b, k);
-        Self::compare_high_card(&hand_a, &hand_b)
+        Self::compare_high_card(hand_a, hand_b)
     }
 }
 

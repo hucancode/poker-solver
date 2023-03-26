@@ -44,7 +44,7 @@ impl Game {
         self.community = from_string(c);
         self
     }
-    pub fn solve(&self) -> Result<(i32, i32, i32), &'static str> {
+    pub fn solve(&self) -> Result<(i32, i32, i32), &str> {
         let mut win = 0;
         let mut lose = 0;
         let mut tie = 0;

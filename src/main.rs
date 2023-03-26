@@ -33,15 +33,14 @@ fn main() {
             let win_rate = win as f32 / (win + lose + tie) as f32 * 100.0;
             println!(
                 "\r\
-                👑 Win:               {:>10}\n\
-                💸 Lose:              {:>10}\n\
-                🤝 Tie:               {:>10}\n\
-                🧮 You win:           {:>9}%",
-                win, lose, tie, win_rate
+                👑 Win:               {win:>10}\n\
+                💸 Lose:              {lose:>10}\n\
+                🤝 Tie:               {tie:>10}\n\
+                🧮 You win:           {win_rate:>9}%"
             );
         }
         Err(e) => {
-            println!("\r{}\n", e);
+            println!("\r{:^32}\n", e);
         }
     }
 }

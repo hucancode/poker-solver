@@ -13,7 +13,7 @@ wasm-bindgen = "0.2.63"
 lto = true
 
 [lib]
-crate-type = ["cdylib", "rlib", "lib"]
+crate-type = ["cdylib", "lib"]
 name = "poker"
 path = "src/poker/mod.rs"
 

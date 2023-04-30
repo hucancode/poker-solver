@@ -1,12 +1,12 @@
-use crate::hand::Hand;
-use crate::hand::RANK_COUNT;
-use crate::hand::SUIT_COUNT;
+use crate::poker::Hand;
+use crate::poker::hand::RANK_COUNT;
+use crate::poker::hand::SUIT_COUNT;
 
 use std::cmp::min;
 use std::cmp::Ordering;
 
 #[derive(Default)]
-pub struct HandEvaluator {
+pub struct Evaluator {
     straight_flush_hand: Vec<Vec<i64>>,
     quad_hand: Vec<Vec<i64>>,
     full_house_hand: Vec<Vec<i64>>,
@@ -17,7 +17,7 @@ pub struct HandEvaluator {
     pair_hand: Vec<Vec<i64>>,
 }
 
-impl HandEvaluator {
+impl Evaluator {
     fn build_straight_hand(&mut self) {
         for rank in (3..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
@@ -80,10 +80,11 @@ impl HandEvaluator {
         }
     }
     fn build_quad_hand(&mut self) {
-        for rank in (0..RANK_COUNT).rev() {
-            let mask: i64 = 0b1111 << (rank * SUIT_COUNT);
-            self.quad_hand.push(vec![mask]);
-        }
+        self.quad_hand = (0..RANK_COUNT)
+            .rev()
+            .map(|r| 0b1111 << (r * SUIT_COUNT))
+            .map(|x| vec![x])
+            .collect();
     }
     fn build_full_house_hand(&mut self) {
         let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
@@ -108,14 +109,15 @@ impl HandEvaluator {
     }
     fn build_trip_hand(&mut self) {
         let suit3 = [0b1110, 0b1101, 0b1011, 0b0111];
-        for rank in (0..RANK_COUNT).rev() {
-            let mut arr: Vec<i64> = Vec::new();
-            for suit in &suit3 {
-                let mask: i64 = suit << (rank * SUIT_COUNT);
-                arr.push(mask);
-            }
-            self.trip_hand.push(arr);
-        }
+        self.trip_hand = (0..RANK_COUNT)
+            .rev()
+            .map(|r| {
+                suit3
+                    .iter()
+                    .map(|&mask| (mask as i64) << (r * SUIT_COUNT))
+                    .collect()
+            })
+            .collect();
     }
     fn build_two_pair_hand(&mut self) {
         let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
@@ -238,7 +240,7 @@ mod tests {
 
     #[test]
     fn straight_flush_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsKsQsJsTs");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 0);
@@ -251,19 +253,19 @@ mod tests {
 
     #[test]
     fn quad_check() {
-        let evaluator = HandEvaluator::new();
-        let input = Hand::from_string("AsAcAdAh");
+        let evaluator = Evaluator::new();
+        let input = Hand::from_string("AsAcAdAh2s");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 1);
         assert_eq!(minor_rank, 0);
-        let input = Hand::from_string("KsKcKdKh");
+        let input = Hand::from_string("KsKcKdKh6d");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 1);
         assert_eq!(minor_rank, 1);
     }
     #[test]
     fn full_house_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsAcAdKhKs");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 2);
@@ -275,14 +277,14 @@ mod tests {
     }
     #[test]
     fn flush_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("As2s6sTs4s");
         let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 3);
     }
     #[test]
     fn straight_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("As2c3d4h5d");
         let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 4);
@@ -292,7 +294,7 @@ mod tests {
     }
     #[test]
     fn trip_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsAcAd");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 5);
@@ -304,7 +306,7 @@ mod tests {
     }
     #[test]
     fn pair2_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsAcKdKh");
         let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 6);
@@ -312,7 +314,7 @@ mod tests {
     }
     #[test]
     fn pair_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsAc");
         let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 7);
@@ -323,7 +325,7 @@ mod tests {
 
     #[test]
     fn high_card_check() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let input = Hand::from_string("AsKc5s8d9d");
         let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 8);
@@ -331,7 +333,7 @@ mod tests {
 
     #[tokio::test]
     async fn vs_aaaaq_aaaak() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("AsAcAdAhQh3s4s"),
             Hand::from_string("AsAcAdAhQhKh3d"),
@@ -341,7 +343,7 @@ mod tests {
 
     #[tokio::test]
     async fn vs_34567_56789() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("5s6d7h3d4cTdJc"),
             Hand::from_string("5s6d7h9c8cTdJc"),
@@ -351,7 +353,7 @@ mod tests {
 
     #[tokio::test]
     async fn vs_333kk_333kk() {
-        let evaluator = HandEvaluator::new();
+        let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("3s3d3hKdKc6d9c"),
             Hand::from_string("3s3d3hKhKs6d9c"),

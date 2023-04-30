@@ -1,7 +1,4 @@
-pub mod evaluator;
-pub mod game;
-pub mod hand;
-
+mod poker;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

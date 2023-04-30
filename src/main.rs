@@ -1,5 +1,6 @@
-use poker::game::Game;
-use poker::hand::Hand;
+mod poker;
+use crate::poker::Game;
+use crate::poker::Hand;
 use std::env;
 use std::io::stdout;
 use std::io::Write;

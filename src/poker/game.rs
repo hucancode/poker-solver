@@ -1,7 +1,7 @@
-use crate::evaluator::HandEvaluator;
-use crate::hand::Hand;
-use crate::hand::RANK_COUNT;
-use crate::hand::SUIT_COUNT;
+use crate::poker::Evaluator;
+use crate::poker::Hand;
+use crate::poker::hand::RANK_COUNT;
+use crate::poker::hand::SUIT_COUNT;
 use futures::future::join_all;
 use std::cmp::Ordering;
 use std::collections::VecDeque;
@@ -11,7 +11,7 @@ pub struct Game {
     pub hand_a: Hand,
     pub hand_b: Hand,
     pub community: Hand,
-    evaluator: HandEvaluator,
+    evaluator: Evaluator,
 }
 impl Game {
     pub fn new() -> Self {
@@ -19,7 +19,7 @@ impl Game {
             hand_a: Hand::default(),
             hand_b: Hand::default(),
             community: Hand::default(),
-            evaluator: HandEvaluator::new(),
+            evaluator: Evaluator::new(),
         }
     }
     fn is_valid(&self) -> bool {

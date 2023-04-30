@@ -8,10 +8,6 @@ pub struct Hand {
 }
 
 impl Hand {
-    pub fn is_empty(&self) -> bool {
-        self.mask == 0
-    }
-
     pub fn len(&self) -> u32 {
         self.mask.count_ones()
     }
@@ -29,12 +25,6 @@ impl Hand {
 
     pub fn from_mask(x: i64) -> Self {
         Self { mask: x }
-    }
-
-    pub fn from_array(arr: &[i32]) -> Self {
-        Self {
-            mask: arr.iter().map(|x| 1 << x).sum(),
-        }
     }
 
     pub fn from_string(hand: &str) -> Self {
@@ -90,6 +80,13 @@ impl Hand {
 mod tests {
     use super::*;
     #[test]
+    fn prettify() {
+        let output = Hand::pretify("QsQcQhKsKd");
+        let expected = "Q♠Q♣Q♥K♠K♦";
+        assert_eq!(output, expected);
+    }
+
+    #[test]
     fn parse_qqqkk() {
         let output = Hand::from_string("QsQcQhKsKc");
         let expected = [40, 41, 43, 44, 45].iter().map(|x| 1 << x).sum();
@@ -109,16 +106,14 @@ mod tests {
     }
     #[test]
     fn highcard_23456() {
-        let input = [0, 5, 10, 15, 19];
-        let mut output = Hand::from_array(&input);
+        let mut output = Hand::from_mask([0, 5, 10, 15, 19].iter().map(|x| 1 << x).sum());
         output.retain_highest_card(2);
         let expected = [15, 19].iter().map(|x| 1 << x).sum();
         assert_eq!(output.mask, expected);
     }
     #[test]
     fn highcard_aaaaq() {
-        let input = [48, 49, 50, 51, 43];
-        let mut output = Hand::from_array(&input);
+        let mut output = Hand::from_mask([48, 49, 50, 51, 43].iter().map(|x| 1 << x).sum());
         output.retain_highest_card(3);
         let expected = [49, 50, 51].iter().map(|x| 1 << x).sum();
         assert_eq!(output.mask, expected);

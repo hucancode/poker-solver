@@ -1,7 +1,7 @@
-use crate::poker::Evaluator;
-use crate::poker::Hand;
 use crate::poker::hand::RANK_COUNT;
 use crate::poker::hand::SUIT_COUNT;
+use crate::poker::Evaluator;
+use crate::poker::Hand;
 use futures::future::join_all;
 use std::cmp::Ordering;
 use std::collections::VecDeque;
@@ -148,6 +148,17 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
+    async fn vs_222_aa_empty() {
+        let game = Game::new()
+            .with_hand_a("AsAd")
+            .with_hand_b("")
+            .with_community("2c2s2d");
+        let output = game.solve().await.unwrap();
+        assert_eq!((1007026, 56410, 6754), output);
+    }
+
+    #[tokio::test]
+    #[ignore]
     async fn vs_234_aa_empty() {
         let game = Game::new()
             .with_hand_a("AsAd")
@@ -155,5 +166,16 @@ mod tests {
             .with_community("2s3s4s");
         let output = game.solve().await.unwrap();
         assert_eq!((913275, 136214, 20701), output);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn vs_268_aa_empty() {
+        let game = Game::new()
+            .with_hand_a("AsAd")
+            .with_hand_b("")
+            .with_community("2c6s8s");
+        let output = game.solve().await.unwrap();
+        assert_eq!((902562, 166683, 945), output);
     }
 }

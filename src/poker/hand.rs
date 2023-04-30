@@ -71,6 +71,10 @@ impl Hand {
         self.mask & other.mask != 0
     }
 
+    pub fn matches(&self, pattern: i64) -> bool {
+        self.mask & pattern == pattern
+    }
+
     pub fn has_rank(&self, rank: i64) -> bool {
         (self.mask & 0b1111 << (rank * SUIT_COUNT)) != 0
     }

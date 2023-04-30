@@ -178,4 +178,26 @@ mod tests {
         let output = game.solve().await.unwrap();
         assert_eq!((902562, 166683, 945), output);
     }
+
+    #[tokio::test]
+    #[ignore]
+    async fn vs_268_tq_empty() {
+        let game = Game::new()
+            .with_hand_a("TdQh")
+            .with_hand_b("")
+            .with_community("2c6s8s");
+        let output = game.solve().await.unwrap();
+        assert_eq!((400858, 657394, 11938), output);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn vs_8tq_6s2h_empty() {
+        let game = Game::new()
+            .with_hand_a("6s2h")
+            .with_hand_b("")
+            .with_community("8cTdQh");
+        let output = game.solve().await.unwrap();
+        assert_eq!((139374, 818875, 111941), output);
+    }
 }

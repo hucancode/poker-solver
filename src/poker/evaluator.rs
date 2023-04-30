@@ -424,5 +424,4 @@ mod tests {
         );
         assert_eq!(output.await, Ordering::Greater);
     }
-
 }

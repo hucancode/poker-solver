@@ -346,7 +346,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_aaaa_kkkk() {
+    async fn aaaa_vs_kkkk() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("AsAcKdKhKsAdAh"),
@@ -356,7 +356,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_aaaaq_aaaak() {
+    async fn aaaaq_vs_aaaak() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("AsAcAdAhQh3s4s"),
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_34567_flush() {
+    async fn _34567_vs_flush() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("5d6d7hJd4c3sJc"),
@@ -376,7 +376,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_34567_56789() {
+    async fn _34567_vs_56789() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("5s6d7h3d4cTdJc"),
@@ -386,7 +386,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_333kk_333kk() {
+    async fn _333kk_vs_333kk() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("3s3d3hKdKc6d9c"),
@@ -396,7 +396,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_pair_pair2() {
+    async fn pair_vs_pair2() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("2s4d5h8dTc4d5c"),
@@ -406,7 +406,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_pair_high_card() {
+    async fn pair_vs_high_card() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("2s4d5h8dTcAdKc"),
@@ -416,7 +416,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_high_card() {
+    async fn high_card_vs_high_card() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("2s4d5h8dTcAdKc"),

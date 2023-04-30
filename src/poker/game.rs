@@ -117,7 +117,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_237_aa_kk() {
+    async fn board_237_aa_kk() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("KsKd")
@@ -127,7 +127,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_23456_aa_empty() {
+    async fn board_23456_aa_xx() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vs_2345_aa_empty() {
+    async fn board_2345_aa_xx() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
@@ -148,7 +148,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
-    async fn vs_222_aa_empty() {
+    async fn board_222_aa_xx() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
@@ -159,7 +159,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
-    async fn vs_234_aa_empty() {
+    async fn board_234_aa_xx() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
@@ -170,7 +170,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
-    async fn vs_268_aa_empty() {
+    async fn board_268_aa_xx() {
         let game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
@@ -181,7 +181,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
-    async fn vs_268_tq_empty() {
+    async fn board_268_tq_xx() {
         let game = Game::new()
             .with_hand_a("TdQh")
             .with_hand_b("")
@@ -192,7 +192,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
-    async fn vs_8tq_6s2h_empty() {
+    async fn board_8tq_6s2h_xx() {
         let game = Game::new()
             .with_hand_a("6s2h")
             .with_hand_b("")

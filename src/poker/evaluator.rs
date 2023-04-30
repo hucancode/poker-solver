@@ -159,6 +159,7 @@ impl Evaluator {
     }
 
     // major rank, minor rank, matched pattern
+    // same as `get_strongest_5`, but has early return path
     fn get_stronger_than(&self, hand: &Hand, target: usize) -> (usize, usize, i64) {
         let pools = [
             &self.straight_flush_hand,

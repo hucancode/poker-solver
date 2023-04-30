@@ -346,11 +346,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn vs_aaaa_kkkk() {
+        let evaluator = Evaluator::new();
+        let output = evaluator.compare(
+            Hand::from_string("AsAcKdKhKsAdAh"),
+            Hand::from_string("AsAcKdKhKsKc3d"),
+        );
+        assert_eq!(output.await, Ordering::Greater);
+    }
+
+    #[tokio::test]
     async fn vs_aaaaq_aaaak() {
         let evaluator = Evaluator::new();
         let output = evaluator.compare(
             Hand::from_string("AsAcAdAhQh3s4s"),
             Hand::from_string("AsAcAdAhQhKh3d"),
+        );
+        assert_eq!(output.await, Ordering::Less);
+    }
+
+    #[tokio::test]
+    async fn vs_34567_flush() {
+        let evaluator = Evaluator::new();
+        let output = evaluator.compare(
+            Hand::from_string("5d6d7hJd4c3sJc"),
+            Hand::from_string("5d6d7hJd4cTdKd"),
         );
         assert_eq!(output.await, Ordering::Less);
     }
@@ -374,4 +394,35 @@ mod tests {
         );
         assert_eq!(output.await, Ordering::Equal);
     }
+
+    #[tokio::test]
+    async fn vs_pair_pair2() {
+        let evaluator = Evaluator::new();
+        let output = evaluator.compare(
+            Hand::from_string("2s4d5h8dTc4d5c"),
+            Hand::from_string("2s4d5h8hTs6d2c"),
+        );
+        assert_eq!(output.await, Ordering::Greater);
+    }
+
+    #[tokio::test]
+    async fn vs_pair_high_card() {
+        let evaluator = Evaluator::new();
+        let output = evaluator.compare(
+            Hand::from_string("2s4d5h8dTcAdKc"),
+            Hand::from_string("2s4d5h8hTs6d2c"),
+        );
+        assert_eq!(output.await, Ordering::Less);
+    }
+
+    #[tokio::test]
+    async fn vs_high_card() {
+        let evaluator = Evaluator::new();
+        let output = evaluator.compare(
+            Hand::from_string("2s4d5h8dTcAdKc"),
+            Hand::from_string("2s4d5h8hTs6d9c"),
+        );
+        assert_eq!(output.await, Ordering::Greater);
+    }
+
 }

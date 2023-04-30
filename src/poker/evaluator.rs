@@ -218,7 +218,7 @@ impl HandEvaluator {
         CompareResult::Tie
     }
 
-    pub fn compare(&self, hand_a: i64, hand_b: i64) -> CompareResult {
+    pub async fn compare(&self, hand_a: i64, hand_b: i64) -> CompareResult {
         let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(hand_a);
         let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(hand_b);
         if rank_major_a < rank_major_b {
@@ -340,33 +340,33 @@ mod tests {
         assert_eq!(rank_major_a, 8);
     }
 
-    #[test]
-    fn vs_aaaaq_aaaak() {
+    #[tokio::test]
+    async fn vs_aaaaq_aaaak() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("AsAcAdAhQh3s4s"),
             hand::from_string("AsAcAdAhQhKh3d"),
         );
-        assert!(matches!(output, CompareResult::BWin));
+        assert!(matches!(output.await, CompareResult::BWin));
     }
 
-    #[test]
-    fn vs_34567_56789() {
+    #[tokio::test]
+    async fn vs_34567_56789() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("5s6d7h3d4cTdJc"),
             hand::from_string("5s6d7h9c8cTdJc"),
         );
-        assert!(matches!(output, CompareResult::BWin));
+        assert!(matches!(output.await, CompareResult::BWin));
     }
 
-    #[test]
-    fn vs_333kk_333kk() {
+    #[tokio::test]
+    async fn vs_333kk_333kk() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
             hand::from_string("3s3d3hKdKc6d9c"),
             hand::from_string("3s3d3hKhKs6d9c"),
         );
-        assert!(matches!(output, CompareResult::Tie));
+        assert!(matches!(output.await, CompareResult::Tie));
     }
 }

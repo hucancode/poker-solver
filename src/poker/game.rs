@@ -44,7 +44,7 @@ impl Game {
         self.community = Hand::from_string(c);
         self
     }
-    pub fn solve(&mut self) -> Result<(i32, i32, i32), &str> {
+    pub fn solve(&mut self) -> Result<(usize, usize, usize), &str> {
         if !self.is_valid() {
             return Err("Invalid game!");
         }

@@ -4,7 +4,7 @@
 
 Install `rustup` if you have not done so. Then build the program with
 ```bash
-cargo build --features="multi-thread"
+cargo build
 ```
 ## Run
 

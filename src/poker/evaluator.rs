@@ -226,7 +226,6 @@ impl Evaluator {
     pub fn compare(&mut self, a: &Hand, b: &Hand) -> Ordering {
         let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(a);
         let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(b);
-        // let (rank_major_b, rank_minor_b, pattern_b) = self.get_stronger_than(&b, rank_major_a);
         if rank_major_a < rank_major_b {
             return Ordering::Greater;
         }

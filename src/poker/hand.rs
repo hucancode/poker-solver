@@ -18,11 +18,6 @@ impl Hand {
         }
     }
 
-    pub fn remove(&mut self, cards: i64) -> &mut Self {
-        self.mask &= !cards;
-        self
-    }
-
     pub fn from_mask(x: i64) -> Self {
         Self { mask: x }
     }
@@ -39,8 +34,23 @@ impl Hand {
         }
         Self { mask: ret }
     }
-    // return `count` highest bit from `mask`
-    pub fn retain_highest_card(&mut self, count: usize) -> &mut Self {
+
+    pub fn get_highest_card_not_in(&self, pattern: i64, count: usize) -> i64 {
+        let mask = self.mask & (!pattern);
+        let mut count = count;
+        let mut ret: i64 = 0;
+        let mut k: i64 = 1 << (RANK_COUNT * SUIT_COUNT - 1);
+        while k != 0 && count != 0 {
+            if (mask & k) != 0 {
+                ret |= k;
+                count -= 1;
+            }
+            k >>= 1;
+        }
+        return ret;
+    }
+
+    pub fn get_highest_card(&self, count: usize) -> i64 {
         let mut count = count;
         let mut ret: i64 = 0;
         let mut k: i64 = 1 << (RANK_COUNT * SUIT_COUNT - 1);
@@ -51,9 +61,9 @@ impl Hand {
             }
             k >>= 1;
         }
-        self.mask = ret;
-        self
+        return ret;
     }
+
     pub fn pretify(hand: &str) -> String {
         let map = HashMap::from([
             ('T', String::from("10")),

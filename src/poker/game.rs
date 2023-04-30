@@ -2,7 +2,6 @@ use crate::poker::hand::RANK_COUNT;
 use crate::poker::hand::SUIT_COUNT;
 use crate::poker::Evaluator;
 use crate::poker::Hand;
-use futures::future::join_all;
 use std::cmp::Ordering;
 use std::collections::VecDeque;
 
@@ -45,7 +44,7 @@ impl Game {
         self.community = Hand::from_string(c);
         self
     }
-    pub async fn solve(&self) -> Result<(i32, i32, i32), &str> {
+    pub fn solve(&mut self) -> Result<(i32, i32, i32), &str> {
         if !self.is_valid() {
             return Err("Invalid game!");
         }
@@ -56,7 +55,7 @@ impl Game {
         while let Some((a, b, c)) = q.pop_front() {
             let board = a.merge(&b).merge(&c);
             if board.len() >= 9 {
-                tasks.push(self.evaluator.compare(a.merge(&c), b.merge(&c)));
+                tasks.push((a.merge(&c), b.merge(&c)));
                 continue;
             }
             let it = deck.clone().filter(|x| !x.overlap(&board));
@@ -92,9 +91,9 @@ impl Game {
             }
         }
 
-        Ok(join_all(tasks)
-            .await
+        Ok(tasks
             .iter()
+            .map(|(a, b)| self.evaluator.compare(a, b))
             .fold((0, 0, 0), |(win, lose, tie), r| match r {
                 Ordering::Greater => (win + 1, lose, tie),
                 Ordering::Less => (win, lose + 1, tie),
@@ -107,97 +106,97 @@ impl Game {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn invalid_game() {
-        let game = Game::new()
+    #[test]
+    fn invalid_game() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("KsKd")
             .with_community("As3s7s");
-        assert!(game.solve().await.is_err());
+        assert!(game.solve().is_err());
     }
 
-    #[tokio::test]
-    async fn board_237_aa_kk() {
-        let game = Game::new()
+    #[test]
+    fn board_237_aa_kk() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("KsKd")
             .with_community("2s3s7s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((923, 67, 0), output);
     }
 
-    #[tokio::test]
-    async fn board_23456_aa_xx() {
-        let game = Game::new()
+    #[test]
+    fn board_23456_aa_xx() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
             .with_community("2s3s4s5s6s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((0, 44, 946), output);
     }
 
-    #[tokio::test]
-    async fn board_2345_aa_xx() {
-        let game = Game::new()
+    #[test]
+    fn board_2345_aa_xx() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
             .with_community("2s3s4s5s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((42570, 2024, 946), output);
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore]
-    async fn board_222_aa_xx() {
-        let game = Game::new()
+    fn board_222_aa_xx() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
             .with_community("2c2s2d");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((1007026, 56410, 6754), output);
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore]
-    async fn board_234_aa_xx() {
-        let game = Game::new()
+    fn board_234_aa_xx() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
             .with_community("2s3s4s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((913275, 136214, 20701), output);
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore]
-    async fn board_268_aa_xx() {
-        let game = Game::new()
+    fn board_268_aa_xx() {
+        let mut game = Game::new()
             .with_hand_a("AsAd")
             .with_hand_b("")
             .with_community("2c6s8s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((902562, 166683, 945), output);
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore]
-    async fn board_268_tq_xx() {
-        let game = Game::new()
+    fn board_268_tq_xx() {
+        let mut game = Game::new()
             .with_hand_a("TdQh")
             .with_hand_b("")
             .with_community("2c6s8s");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((400858, 657394, 11938), output);
     }
 
-    #[tokio::test]
+    #[test]
     #[ignore]
-    async fn board_8tq_6s2h_xx() {
-        let game = Game::new()
+    fn board_8tq_6s2h_xx() {
+        let mut game = Game::new()
             .with_hand_a("6s2h")
             .with_hand_b("")
             .with_community("8cTdQh");
-        let output = game.solve().await.unwrap();
+        let output = game.solve().unwrap();
         assert_eq!((139374, 818875, 111941), output);
     }
 }

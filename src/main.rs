@@ -1,5 +1,5 @@
 use poker::game::Game;
-use poker::hand;
+use poker::hand::Hand;
 use std::env;
 use std::io::stdout;
 use std::io::Write;
@@ -18,9 +18,9 @@ async fn main() {
         🎴 Their hand:      {:>12}\n\
         \n\
         Running numbers...",
-        hand::pretify(community),
-        hand::pretify(hand_a),
-        hand::pretify(hand_b),
+        Hand::pretify(community),
+        Hand::pretify(hand_a),
+        Hand::pretify(hand_b),
     );
     if stdout().flush().is_err() {
         return;

@@ -1,48 +1,48 @@
-use crate::evaluator::CompareResult;
 use crate::evaluator::HandEvaluator;
-use crate::hand::from_string;
+use crate::hand::Hand;
 use crate::hand::RANK_COUNT;
 use crate::hand::SUIT_COUNT;
 use futures::future::join_all;
+use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 #[derive(Default)]
 pub struct Game {
-    pub hand_a: i64,
-    pub hand_b: i64,
-    pub community: i64,
+    pub hand_a: Hand,
+    pub hand_b: Hand,
+    pub community: Hand,
     evaluator: HandEvaluator,
 }
 impl Game {
     pub fn new() -> Self {
         Self {
-            hand_a: 0,
-            hand_b: 0,
-            community: 0,
+            hand_a: Hand::default(),
+            hand_b: Hand::default(),
+            community: Hand::default(),
             evaluator: HandEvaluator::new(),
         }
     }
     fn is_valid(&self) -> bool {
-        let a = self.hand_a.count_ones();
-        let b = self.hand_b.count_ones();
-        let c = self.community.count_ones();
+        let a = self.hand_a.len();
+        let b = self.hand_b.len();
+        let c = self.community.len();
         a == 2
             && b <= 2
             && (3..=5).contains(&c)
-            && self.hand_a & self.hand_b == 0
-            && self.hand_a & self.community == 0
-            && self.hand_b & self.community == 0
+            && !self.hand_a.overlap(&self.hand_b)
+            && !self.hand_a.overlap(&self.community)
+            && !self.hand_b.overlap(&self.community)
     }
     pub fn with_hand_a(mut self, a: &str) -> Self {
-        self.hand_a = from_string(a);
+        self.hand_a = Hand::from_string(a);
         self
     }
     pub fn with_hand_b(mut self, b: &str) -> Self {
-        self.hand_b = from_string(b);
+        self.hand_b = Hand::from_string(b);
         self
     }
     pub fn with_community(mut self, c: &str) -> Self {
-        self.community = from_string(c);
+        self.community = Hand::from_string(c);
         self
     }
     pub async fn solve(&self) -> Result<(i32, i32, i32), &str> {
@@ -52,40 +52,40 @@ impl Game {
         let mut tasks = Vec::new();
         let mut q = VecDeque::new();
         q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| 1 << x);
+        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| Hand::from_mask(1 << x));
         while let Some((a, b, c)) = q.pop_front() {
-            let board = a | b | c;
-            if board.count_ones() >= 9 {
-                tasks.push(self.evaluator.compare(a | c, b | c));
+            let board = a.merge(&b).merge(&c);
+            if board.len() >= 9 {
+                tasks.push(self.evaluator.compare(a.merge(&c), b.merge(&c)));
                 continue;
             }
-            let it = deck.clone().filter(|x| x & board == 0);
-            if b.count_ones() < 2 {
+            let it = deck.clone().filter(|x| !x.overlap(&board));
+            if b.len() < 2 {
                 let mut bq = VecDeque::new();
                 bq.push_back((it, b));
                 while let Some((it, b)) = bq.pop_front() {
-                    if b.count_ones() == 2 {
+                    if b.len() == 2 {
                         q.push_back((a, b, c));
                         continue;
                     }
                     let mut it = it.clone();
                     while let Some(x) = it.next() {
-                        bq.push_back((it.clone(), b | x));
+                        bq.push_back((it.clone(), b.merge(&x)));
                     }
                 }
                 continue;
             }
-            if c.count_ones() < 5 {
+            if c.len() < 5 {
                 let mut cq = VecDeque::new();
                 cq.push_back((it, c));
                 while let Some((it, c)) = cq.pop_front() {
-                    if c.count_ones() == 5 {
+                    if c.len() == 5 {
                         q.push_back((a, b, c));
                         continue;
                     }
                     let mut it = it.clone();
                     while let Some(x) = it.next() {
-                        cq.push_back((it.clone(), c | x));
+                        cq.push_back((it.clone(), c.merge(&x)));
                     }
                 }
                 continue;
@@ -96,9 +96,9 @@ impl Game {
             .await
             .iter()
             .fold((0, 0, 0), |(win, lose, tie), r| match r {
-                CompareResult::AWin => (win + 1, lose, tie),
-                CompareResult::BWin => (win, lose + 1, tie),
-                CompareResult::Tie => (win, lose, tie + 1),
+                Ordering::Greater => (win + 1, lose, tie),
+                Ordering::Less => (win, lose + 1, tie),
+                Ordering::Equal => (win, lose, tie + 1),
             }))
     }
 }

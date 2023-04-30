@@ -1,14 +1,9 @@
-use crate::hand;
+use crate::hand::Hand;
 use crate::hand::RANK_COUNT;
 use crate::hand::SUIT_COUNT;
 
 use std::cmp::min;
-
-pub enum CompareResult {
-    AWin,
-    BWin,
-    Tie,
-}
+use std::cmp::Ordering;
 
 #[derive(Default)]
 pub struct HandEvaluator {
@@ -70,17 +65,11 @@ impl HandEvaluator {
                         for r4 in (0..r3).rev() {
                             let mut arr: Vec<i64> = Vec::new();
                             for suit in 0..4 {
-                                let mut mask: i64 = 0;
-                                let card = r0 * SUIT_COUNT + suit;
-                                mask |= 1 << card;
-                                let card = r1 * SUIT_COUNT + suit;
-                                mask |= 1 << card;
-                                let card = r2 * SUIT_COUNT + suit;
-                                mask |= 1 << card;
-                                let card = r3 * SUIT_COUNT + suit;
-                                mask |= 1 << card;
-                                let card = r4 * SUIT_COUNT + suit;
-                                mask |= 1 << card;
+                                let mask = [r0, r1, r2, r3, r4]
+                                    .into_iter()
+                                    .map(|x| x * SUIT_COUNT + suit)
+                                    .map(|x| 1 << x)
+                                    .sum();
                                 arr.push(mask);
                             }
                             self.flush_hand.push(arr);
@@ -158,9 +147,9 @@ impl HandEvaluator {
     }
 
     // pattern, order
-    fn get_rank_in(mask: i64, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
+    fn get_rank_in(hand: &Hand, pool: &[Vec<i64>]) -> Option<(i64, i32)> {
         for (rank, arr) in pool.iter().enumerate() {
-            if let Some(pattern) = arr.iter().find(|&&x| (mask & x) == x) {
+            if let Some(pattern) = arr.iter().find(|&&x| (hand.mask & x) == x) {
                 return Some((*pattern, rank as i32));
             }
         }
@@ -168,7 +157,7 @@ impl HandEvaluator {
     }
 
     // major rank, minor rank, matched pattern
-    fn get_strongest_5(&self, mask: i64) -> (i32, i32, i64) {
+    fn get_strongest_5(&self, hand: &Hand) -> (i32, i32, i64) {
         let mut major_rank = 0;
         let pools = [
             &self.straight_flush_hand,
@@ -180,8 +169,8 @@ impl HandEvaluator {
             &self.two_pair_hand,
             &self.pair_hand,
         ];
-        for pool in &pools {
-            if let Some((pattern, minor_rank)) = Self::get_rank_in(mask, pool) {
+        for pool in pools {
+            if let Some((pattern, minor_rank)) = Self::get_rank_in(hand, pool) {
                 return (major_rank, minor_rank, pattern);
             }
             major_rank += 1;
@@ -201,61 +190,61 @@ impl HandEvaluator {
         ret
     }
 
-    fn compare_high_card(hand_a: i64, hand_b: i64) -> CompareResult {
+    fn compare_high_card(a: &Hand, b: &Hand) -> Ordering {
         for rank in (0..RANK_COUNT).rev() {
-            let a_matched = (hand_a & 0b1111 << (rank * SUIT_COUNT)) != 0;
-            let b_matched = (hand_b & 0b1111 << (rank * SUIT_COUNT)) != 0;
+            let a_matched = a.has_rank(rank);
+            let b_matched = b.has_rank(rank);
             if a_matched == b_matched {
                 continue;
             }
             if a_matched {
-                return CompareResult::AWin;
+                return Ordering::Greater;
             }
             if b_matched {
-                return CompareResult::BWin;
+                return Ordering::Less;
             }
         }
-        CompareResult::Tie
+        Ordering::Equal
     }
 
-    pub async fn compare(&self, hand_a: i64, hand_b: i64) -> CompareResult {
-        let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(hand_a);
-        let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(hand_b);
+    pub async fn compare(&self, a: Hand, b: Hand) -> Ordering {
+        let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(&a);
+        let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(&b);
         if rank_major_a < rank_major_b {
-            return CompareResult::AWin;
+            return Ordering::Greater;
         }
         if rank_major_b < rank_major_a {
-            return CompareResult::BWin;
+            return Ordering::Less;
         }
         if rank_minor_a < rank_minor_b {
-            return CompareResult::AWin;
+            return Ordering::Greater;
         }
         if rank_minor_b < rank_minor_a {
-            return CompareResult::BWin;
+            return Ordering::Less;
         }
         let k = (5 - min(5, pattern_a.count_ones())) as usize;
-        let hand_a = hand_a & (!pattern_a);
-        let hand_a = hand::get_highest_card(hand_a, k);
-        let hand_b = hand_b & (!pattern_b);
-        let hand_b = hand::get_highest_card(hand_b, k);
-        Self::compare_high_card(hand_a, hand_b)
+        let mut a = a;
+        let mut b = b;
+        Self::compare_high_card(
+            a.remove(pattern_a).retain_highest_card(k),
+            b.remove(pattern_b).retain_highest_card(k),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hand;
 
     #[test]
     fn straight_flush_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsKsQsJsTs");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsKsQsJsTs");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 0);
         assert_eq!(minor_rank, 0);
-        let input = hand::from_string("KsQsJsTs9s");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("KsQsJsTs9s");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 0);
         assert_eq!(minor_rank, 1);
     }
@@ -263,80 +252,80 @@ mod tests {
     #[test]
     fn quad_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsAcAdAh");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAcAdAh");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 1);
         assert_eq!(minor_rank, 0);
-        let input = hand::from_string("KsKcKdKh");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("KsKcKdKh");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 1);
         assert_eq!(minor_rank, 1);
     }
     #[test]
     fn full_house_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsAcAdKhKs");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAcAdKhKs");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 2);
         assert_eq!(minor_rank, 0);
-        let input = hand::from_string("AsAcAdQhQs");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAcAdQhQs");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 2);
         assert_eq!(minor_rank, 1);
     }
     #[test]
     fn flush_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("As2s6sTs4s");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("As2s6sTs4s");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 3);
     }
     #[test]
     fn straight_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("As2c3d4h5d");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("As2c3d4h5d");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 4);
-        let input = hand::from_string("2c3d4h5d6s");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("2c3d4h5d6s");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 4);
     }
     #[test]
     fn trip_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsAcAd");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAcAd");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 5);
         assert_eq!(minor_rank, 0);
-        let input = hand::from_string("KsKcKd");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("KsKcKd");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 5);
         assert_eq!(minor_rank, 1);
     }
     #[test]
     fn pair2_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsAcKdKh");
-        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAcKdKh");
+        let (major_rank, minor_rank, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 6);
         assert_eq!(minor_rank, 0);
     }
     #[test]
     fn pair_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsAc");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsAc");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 7);
-        let input = hand::from_string("2s2c");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("2s2c");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 7);
     }
 
     #[test]
     fn high_card_check() {
         let evaluator = HandEvaluator::new();
-        let input = hand::from_string("AsKc5s8d9d");
-        let (major_rank, _, _) = evaluator.get_strongest_5(input);
+        let input = Hand::from_string("AsKc5s8d9d");
+        let (major_rank, _, _) = evaluator.get_strongest_5(&input);
         assert_eq!(major_rank, 8);
     }
 
@@ -344,29 +333,29 @@ mod tests {
     async fn vs_aaaaq_aaaak() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
-            hand::from_string("AsAcAdAhQh3s4s"),
-            hand::from_string("AsAcAdAhQhKh3d"),
+            Hand::from_string("AsAcAdAhQh3s4s"),
+            Hand::from_string("AsAcAdAhQhKh3d"),
         );
-        assert!(matches!(output.await, CompareResult::BWin));
+        assert!(matches!(output.await, Ordering::Less));
     }
 
     #[tokio::test]
     async fn vs_34567_56789() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
-            hand::from_string("5s6d7h3d4cTdJc"),
-            hand::from_string("5s6d7h9c8cTdJc"),
+            Hand::from_string("5s6d7h3d4cTdJc"),
+            Hand::from_string("5s6d7h9c8cTdJc"),
         );
-        assert!(matches!(output.await, CompareResult::BWin));
+        assert!(matches!(output.await, Ordering::Less));
     }
 
     #[tokio::test]
     async fn vs_333kk_333kk() {
         let evaluator = HandEvaluator::new();
         let output = evaluator.compare(
-            hand::from_string("3s3d3hKdKc6d9c"),
-            hand::from_string("3s3d3hKhKs6d9c"),
+            Hand::from_string("3s3d3hKdKc6d9c"),
+            Hand::from_string("3s3d3hKhKs6d9c"),
         );
-        assert!(matches!(output.await, CompareResult::Tie));
+        assert!(matches!(output.await, Ordering::Equal));
     }
 }

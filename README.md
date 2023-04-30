@@ -4,7 +4,7 @@
 
 Install `rustup` if you have not done so. Then build the program with
 ```bash
-cargo build
+cargo build --features="multi-thread"
 ```
 ## Run
 
@@ -44,3 +44,12 @@ The program will output all possible game outcomes. Here is an example:
 - A card represented by 2 characters, card rank and card suit
 - Card rank can accept `23456789TJQKA`
 - Card suit can accept `scdh`, stand for `Spade ♠`, `Club ♣`, `Diamond ♦`, `Heart ♥`
+
+## Build for the web
+
+You need [wasm-pack](https://rustwasm.github.io/wasm-pack/)
+Build wasm target with
+```bash
+wasm-pack build
+```
+Output would be at `pkg` folder, install it to your node project and use 

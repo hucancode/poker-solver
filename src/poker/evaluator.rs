@@ -190,7 +190,7 @@ impl Evaluator {
         }
         let res = (pools.len(), 0, hand.get_highest_card(5));
         self.hash_map.insert(key, res);
-        return res;
+        res
     }
 
     pub fn new() -> Self {

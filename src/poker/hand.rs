@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 pub const RANK_COUNT: i64 = 13;
 pub const SUIT_COUNT: i64 = 4;
 
@@ -47,7 +46,7 @@ impl Hand {
             }
             k >>= 1;
         }
-        return ret;
+        ret
     }
 
     pub fn get_highest_card(&self, count: usize) -> i64 {
@@ -61,20 +60,7 @@ impl Hand {
             }
             k >>= 1;
         }
-        return ret;
-    }
-
-    pub fn pretify(hand: &str) -> String {
-        let map = HashMap::from([
-            ('T', String::from("10")),
-            ('s', String::from("♠")),
-            ('c', String::from("♣")),
-            ('d', String::from("♦")),
-            ('h', String::from("♥")),
-        ]);
-        return hand.chars().fold(String::new(), |acc, x| {
-            acc + map.get(&x).unwrap_or(&String::from(x))
-        });
+        ret
     }
 
     pub fn overlap(&self, other: &Self) -> bool {

@@ -1,4 +1,6 @@
 # Poker Solver
+[![Fast check](https://github.com/hucancode/poker-solver/actions/workflows/fast-check.yml/badge.svg)](https://github.com/hucancode/poker-solver/actions/workflows/fast-check.yml)
+[![Full check](https://github.com/hucancode/poker-solver/actions/workflows/full-check.yml/badge.svg)](https://github.com/hucancode/poker-solver/actions/workflows/full-check.yml)
 
 ## Motivation
 

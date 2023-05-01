@@ -3,8 +3,11 @@ name = "poker-solver"
 version = "0.1.0"
 authors = ["hucancode <hucancode@gmail.com>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A tool to approximate your winning chance in a Texas Holdem poker game"
+keywords = ["poker"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/hucancode/poker-solver"
 
 [dependencies]
 wasm-bindgen = { version = "0.2.63" }
@@ -15,7 +18,3 @@ debug = true
 
 [lib]
 crate-type = ["cdylib"]
-
-[[bin]]
-name = "poker"
-path = "src/main.rs"

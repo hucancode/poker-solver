@@ -3,7 +3,7 @@
 ## Motivation
 
 This tool will help you approximate your winning chance in a [Texas Holdem](https://en.wikipedia.org/wiki/Texas_hold_%27em) poker game.
-Kindly set a board, click `Compute`, and let the computer do the hard work for you.
+There is a web front end for this tool at [here](https://github.com/hucancode/poker-simulator)
 
 Without a doubt, luck plays a significant role here,
 but stepping into the game without a good mathematical foundation is equivalent to doing charity.

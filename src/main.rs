@@ -1,22 +1,10 @@
 mod poker;
+mod utils;
 use crate::poker::Game;
-use std::collections::HashMap;
+use crate::utils::pretify;
 use std::env;
 use std::io::stdout;
 use std::io::Write;
-
-pub fn pretify(hand: &str) -> String {
-    let map = HashMap::from([
-        ('T', String::from("10")),
-        ('s', String::from("♠")),
-        ('c', String::from("♣")),
-        ('d', String::from("♦")),
-        ('h', String::from("♥")),
-    ]);
-    return hand.chars().fold(String::new(), |acc, x| {
-        acc + map.get(&x).unwrap_or(&String::from(x))
-    });
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();

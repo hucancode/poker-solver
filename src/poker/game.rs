@@ -147,6 +147,28 @@ mod tests {
 
     #[test]
     #[ignore]
+    fn board_tjq_ka_xx() {
+        let mut game = Game::new()
+            .with_hand_a("KsAs")
+            .with_hand_b("")
+            .with_community("TsJsQs");
+        let output = game.solve().unwrap();
+        assert_eq!((1070190, 0, 0), output);
+    }
+
+    #[test]
+    #[ignore]
+    fn board_aak_aa_xx() {
+        let mut game = Game::new()
+            .with_hand_a("AsAc")
+            .with_hand_b("")
+            .with_community("AdAhKs");
+        let output = game.solve().unwrap();
+        assert_eq!((1070160, 30, 0), output);
+    }
+
+    #[test]
+    #[ignore]
     fn board_222_aa_xx() {
         let mut game = Game::new()
             .with_hand_a("AsAd")

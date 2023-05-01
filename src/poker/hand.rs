@@ -79,12 +79,6 @@ impl Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn prettify() {
-        let output = Hand::pretify("QsQcQhKsKd");
-        let expected = "Q♠Q♣Q♥K♠K♦";
-        assert_eq!(output, expected);
-    }
 
     #[test]
     fn parse_qqqkk() {
@@ -106,16 +100,16 @@ mod tests {
     }
     #[test]
     fn highcard_23456() {
-        let mut output = Hand::from_mask([0, 5, 10, 15, 19].iter().map(|x| 1 << x).sum());
-        output.retain_highest_card(2);
+        let output =
+            Hand::from_mask([0, 5, 10, 15, 19].iter().map(|x| 1 << x).sum()).get_highest_card(2);
         let expected = [15, 19].iter().map(|x| 1 << x).sum();
-        assert_eq!(output.mask, expected);
+        assert_eq!(output, expected);
     }
     #[test]
     fn highcard_aaaaq() {
-        let mut output = Hand::from_mask([48, 49, 50, 51, 43].iter().map(|x| 1 << x).sum());
-        output.retain_highest_card(3);
+        let output =
+            Hand::from_mask([48, 49, 50, 51, 43].iter().map(|x| 1 << x).sum()).get_highest_card(3);
         let expected = [49, 50, 51].iter().map(|x| 1 << x).sum();
-        assert_eq!(output.mask, expected);
+        assert_eq!(output, expected);
     }
 }

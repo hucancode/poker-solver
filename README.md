@@ -10,21 +10,29 @@ but stepping into the game without a good mathematical foundation is equivalent 
 I hope my codes can do a little help preparing you on that aspect ☺
 
 ## Install
+
 ### Build main program
+
 Install `rustup` if you have not done so. Then build the program with
+
 ```bash
 cargo build
 ```
+
 ### Build for the web
+
 You need [wasm-pack](https://rustwasm.github.io/wasm-pack/)
+
 ```bash
 wasm-pack build --target web
 ```
+
 Output would be at `pkg` folder, install it using `npm install ./path/to/pkg/`
 
 ## Run
 
 Run the program with
+
 ```bash
 cargo run -- <Community Cards> <Your Hand> [Their Hand]
 # Example
@@ -34,17 +42,21 @@ cargo run -- 2s3s4d3d AsAd
 # or you can run it directly like this
 ./poker-solver 2s3s4d3d AsAd
 ```
+
 ### Input format
+
 - Community cards consist of 3-5 cards
 - Your hand consist of 2 cards
 - Their hand consist of 0-2 cards
 
 Card notation
+
 - A card represented by 2 characters, card rank and card suit
 - Card rank can accept `23456789TJQKA`
 - Card suit can accept `scdh`, stand for `Spade ♠`, `Club ♣`, `Diamond ♦`, `Heart ♥`
 
 The program will output all possible game outcomes. Here is an example:
+
 ```
 🎴 Community cards:       2♠3♠7♠
 🎴 Your hand:               A♠A♦
@@ -73,21 +85,23 @@ Here are the number of possible outcome in each given game phase
 | Possible Outcomes | 1070190               | 45540                | 990                       |
 
 Here are some tests I made, you can run those tests yourself with
+
 ```bash
 cargo test
 ```
-| Test Case                                             | Game Code        | Solve Time      |
-|-------------------------------------------------------|------------------|-----------------|
-| Both hands revealed, 3 community cards                | AsAd,KsKd,2s3s7s | 84.6ms ± 2.2ms  |
-| All community cards revealed                          | AsAd,,2s3s4s5s6s | 50.2ms ± 2.7ms  |
-| 4 community cards revealed                            | AsAd,,2s3s4s5s   | 290.0ms ± 2.9ms |
-| Early straight-flush                                  | KsAs,,TsJsQs     | 3.721s ± 0.069s |
-| Early quad                                            | AsAc,,AdAhKs     | 4.334s ± 0.082s |
-| Early full-house                                      | AsAd,,2c2s2d     | 2.787s ± 0.033s |
-| No cards revealed, pair of Ace, almost flush/straight | AsAd,,2s3s4s     | 3.999s ± 0.029s |
-| No cards revealed, pair of Ace                        | AsAd,,2c6s8s     | 4.412s ± 0.012s |
-| High cards                                            | TdQh,,2c6s8s     | 4.415s ± 0.031s |
-| Weak high cards                                       | 6s2h,,8cTdQh     | 4.282s ± 0.019s |
+
+| Test Case                                    | Game Code        | Solve Time      |
+| -------------------------------------------- | ---------------- | --------------- |
+| Both hands revealed, Flop                    | AsAd,KsKd,2s3s7s | 84.6ms ± 2.2ms  |
+| All community cards revealed                 | AsAd,,2s3s4s5s6s | 50.2ms ± 2.7ms  |
+| Turn                                         | AsAd,,2s3s4s5s   | 290.0ms ± 2.9ms |
+| Early royal straight-flush                   | KsAs,,TsJsQs     | 3.721s ± 0.069s |
+| Early quad                                   | AsAc,,AdAhKs     | 4.334s ± 0.082s |
+| Early full-house                             | AsAd,,2c2s2d     | 2.787s ± 0.033s |
+| Early pair of Ace, +1 card to flush/straight | AsAd,,2s3s4s     | 3.999s ± 0.029s |
+| Early pair of Ace                            | AsAd,,2c6s8s     | 4.412s ± 0.012s |
+| High cards                                   | TdQh,,2c6s8s     | 4.415s ± 0.031s |
+| Low cards                                    | 6s2h,,8cTdQh     | 4.282s ± 0.019s |
 
 - The program perform relatively well given the large number of possibilites
 - With `wasm` version, expect 2~4 times slower (which is ~16 seconds worse case, still acceptable by my standard)

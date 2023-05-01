@@ -116,6 +116,36 @@ mod tests {
     }
 
     #[test]
+    fn revealed_game_1() {
+        let mut game = Game::new()
+            .with_hand_a("AsAd")
+            .with_hand_b("KsKd")
+            .with_community("2s3s7s3d6s");
+        let output = game.solve().unwrap();
+        assert_eq!((1, 0, 0), output);
+    }
+
+    #[test]
+    fn revealed_game_2() {
+        let mut game = Game::new()
+            .with_hand_a("3s2d")
+            .with_hand_b("2s3d")
+            .with_community("9dTs7s4d6s");
+        let output = game.solve().unwrap();
+        assert_eq!((0, 0, 1), output);
+    }
+
+    #[test]
+    fn revealed_game_3() {
+        let mut game = Game::new()
+            .with_hand_a("3s2d")
+            .with_hand_b("2s3d")
+            .with_community("9sTs7s4d6s");
+        let output = game.solve().unwrap();
+        assert_eq!((1, 0, 0), output);
+    }
+
+    #[test]
     fn board_237_aa_kk() {
         let mut game = Game::new()
             .with_hand_a("AsAd")

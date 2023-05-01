@@ -1,7 +1,7 @@
 mod poker;
 mod utils;
 use crate::poker::Game;
-use crate::utils::pretify;
+use crate::utils::prettify;
 use std::env;
 use std::io::stdout;
 use std::io::Write;
@@ -19,9 +19,9 @@ fn main() {
         🎴 Their hand:      {:>12}\n\
         \n\
         Running numbers...",
-        pretify(community),
-        pretify(hand_a),
-        pretify(hand_b),
+        prettify(community),
+        prettify(hand_a),
+        prettify(hand_b),
     );
     if stdout().flush().is_err() {
         return;

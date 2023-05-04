@@ -28,6 +28,7 @@ mod tests {
         assert_eq!(output, expected);
         let output = super::prettify("2s2c2d2h");
         let expected = "2♠2♣2♦2♥";
+        assert_eq!(output, expected);
         let output = super::prettify("2s3s4s5s6s7s8s9sTsJsQsKsAs");
         let expected = "2♠3♠4♠5♠6♠7♠8♠9♠10♠J♠Q♠K♠A♠";
         assert_eq!(output, expected);

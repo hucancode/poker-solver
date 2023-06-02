@@ -5,6 +5,8 @@ use crate::utils::prettify;
 use std::env;
 use std::io::stdout;
 use std::io::Write;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,11 +28,7 @@ fn main() {
     if stdout().flush().is_err() {
         return;
     }
-    let mut game = Game::new()
-        .with_hand_a(hand_a.as_str())
-        .with_hand_b(hand_b.as_str())
-        .with_community(community.as_str());
-    match game.solve() {
+    match solve(hand_a, hand_b, community) {
         Ok((win, lose, tie)) => {
             let win_rate = win as f32 / (win + lose + tie) as f32 * 100.0;
             println!(
@@ -44,5 +42,16 @@ fn main() {
         Err(e) => {
             println!("\r{:^32}\n", e);
         }
+    }
+}
+
+static GAME_INSTANCE: OnceLock<Mutex<Game>> = OnceLock::new();
+
+pub fn solve(hand_a: &str, hand_b: &str, community: &str) -> Result<(usize, usize, usize), String> {
+    let mutex = GAME_INSTANCE.get_or_init(|| Mutex::new(Game::new()));
+    if let Ok(mut game) = mutex.lock() {
+        game.solve_by(hand_a, hand_b, community)
+    } else {
+        Err("could not get game solver instance".to_string())
     }
 }

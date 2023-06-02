@@ -32,21 +32,15 @@ impl Game {
             && !self.hand_a.overlap(&self.community)
             && !self.hand_b.overlap(&self.community)
     }
-    pub fn with_hand_a(mut self, a: &str) -> Self {
+    pub fn solve_by(&mut self, a: &str, b: &str, c: &str) -> Result<(usize, usize, usize), String> {
         self.hand_a = Hand::from_string(a);
-        self
-    }
-    pub fn with_hand_b(mut self, b: &str) -> Self {
         self.hand_b = Hand::from_string(b);
-        self
-    }
-    pub fn with_community(mut self, c: &str) -> Self {
         self.community = Hand::from_string(c);
-        self
+        self.solve()
     }
-    pub fn solve(&mut self) -> Result<(usize, usize, usize), &str> {
+    pub fn solve(&mut self) -> Result<(usize, usize, usize), String> {
         if !self.is_valid() {
-            return Err("Invalid game!");
+            return Err("Invalid game!".to_string());
         }
         let mut tasks = Vec::new();
         let mut q = VecDeque::new();

@@ -1,6 +1,6 @@
 [package]
 name = "poker-solver"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["hucancode <hucancode@gmail.com>"]
 edition = "2021"
 description = "A tool to approximate your winning chance in a Texas Holdem poker game"

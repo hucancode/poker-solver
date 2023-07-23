@@ -128,6 +128,13 @@ mod tests {
     }
 
     #[test]
+    fn board_jqka_ak_qq() {
+        let mut game = Game::new();
+        let output = game.solve_by("AdKd","QsQc","QdJdAcKc").unwrap();
+        assert_eq!((13, 28, 3), output);
+    }
+
+    #[test]
     fn board_237_aa_kk() {
         let mut game = Game::new();
         let output = game.solve_by("AsAd","KsKd","2s3s7s").unwrap();

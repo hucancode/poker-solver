@@ -247,6 +247,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn pattern_array_check() {
+        let evaluator = Evaluator::new();
+        assert_eq!(evaluator.straight_flush_hand.iter().flatten().count(), 40);
+        assert_eq!(evaluator.quad_hand.iter().flatten().count(), 13);
+        assert_eq!(evaluator.full_house_hand.iter().flatten().count(), 3744);
+        assert_eq!(evaluator.flush_hand.iter().flatten().count(), 5148);
+        assert_eq!(evaluator.straight_hand.iter().flatten().count(), 30680);
+        assert_eq!(evaluator.trip_hand.iter().flatten().count(), 52);
+        assert_eq!(evaluator.two_pair_hand.iter().flatten().count(), 2808);
+        assert_eq!(evaluator.pair_hand.iter().flatten().count(), 78);
+    }
+    #[test]
     fn straight_flush_check() {
         let mut evaluator = Evaluator::new();
         let input = &Hand::from("AsKsQsJsTs");
@@ -256,7 +268,6 @@ mod tests {
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (0, 1, _)));
     }
-
     #[test]
     fn quad_check() {
         let mut evaluator = Evaluator::new();
@@ -321,7 +332,6 @@ mod tests {
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (7, _, _)));
     }
-
     #[test]
     fn high_card_check() {
         let mut evaluator = Evaluator::new();
@@ -329,7 +339,6 @@ mod tests {
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (8, _, _)));
     }
-
     #[test]
     fn aaaa_vs_kkkk() {
         let mut evaluator = Evaluator::new();
@@ -337,7 +346,6 @@ mod tests {
             evaluator.compare(&Hand::from("AsAcKdKhKsAdAh"), &Hand::from("AsAcKdKhKsKc3d"));
         assert_eq!(output, Ordering::Greater);
     }
-
     #[test]
     fn aaaaq_vs_aaaak() {
         let mut evaluator = Evaluator::new();
@@ -345,7 +353,6 @@ mod tests {
             evaluator.compare(&Hand::from("AsAcAdAhQh3s4s"), &Hand::from("AsAcAdAhQhKh3d"));
         assert_eq!(output, Ordering::Less);
     }
-
     #[test]
     fn _34567_vs_flush() {
         let mut evaluator = Evaluator::new();
@@ -353,7 +360,6 @@ mod tests {
             evaluator.compare(&Hand::from("5d6d7hJd4c3sJc"), &Hand::from("5d6d7hJd4cTdKd"));
         assert_eq!(output, Ordering::Less);
     }
-
     #[test]
     fn _34567_vs_56789() {
         let mut evaluator = Evaluator::new();
@@ -361,7 +367,6 @@ mod tests {
             evaluator.compare(&Hand::from("5s6d7h3d4cTdJc"), &Hand::from("5s6d7h9c8cTdJc"));
         assert_eq!(output, Ordering::Less);
     }
-
     #[test]
     fn _333kk_vs_333kk() {
         let mut evaluator = Evaluator::new();
@@ -369,7 +374,6 @@ mod tests {
             evaluator.compare(&Hand::from("3s3d3hKdKc6d9c"), &Hand::from("3s3d3hKhKs6d9c"));
         assert_eq!(output, Ordering::Equal);
     }
-
     #[test]
     fn pair_vs_pair2() {
         let mut evaluator = Evaluator::new();
@@ -377,7 +381,6 @@ mod tests {
             evaluator.compare(&Hand::from("2s4d5h8dTc4d5c"), &Hand::from("2s4d5h8hTs6d2c"));
         assert_eq!(output, Ordering::Greater);
     }
-
     #[test]
     fn pair_vs_high_card() {
         let mut evaluator = Evaluator::new();
@@ -385,7 +388,6 @@ mod tests {
             evaluator.compare(&Hand::from("2s4d5h8dTcAdKc"), &Hand::from("2s4d5h8hTs6d2c"));
         assert_eq!(output, Ordering::Less);
     }
-
     #[test]
     fn high_card_vs_high_card() {
         let mut evaluator = Evaluator::new();

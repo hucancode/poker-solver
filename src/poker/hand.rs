@@ -85,6 +85,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn hand_len() {
+        let hand1 = Hand::from("2s3c4hKsKcAdAs");
+        let hand2 = Hand::from("KcAdAs");
+        let hand3 = Hand::from("4hKs");
+        assert_eq!(hand1.len(), 7);
+        assert_eq!(hand2.len(), 3);
+        assert_eq!(hand3.len(), 2);
+    }
+    #[test]
     fn get_highest_card() {
         let hand1 = Hand::from("2s3c4hKsKcAdAs");
         let hand2 = Hand::from("KcAdAs");
@@ -111,9 +120,9 @@ mod tests {
     #[test]
     fn has_rank() {
         let hand = Hand::from("2s3c4hKsKc");
-        assert_eq!(hand.has_rank(0), true);
-        assert_eq!(hand.has_rank(8), false);
-        assert_eq!(hand.has_rank(12), false);
+        assert!(hand.has_rank(0));
+        assert!(!hand.has_rank(8));
+        assert!(!hand.has_rank(12));
     }
     #[test]
     fn parse_qqqkk() {
@@ -137,7 +146,7 @@ mod tests {
     fn highcard_23456() {
         let output = Hand::from([0, 5, 10, 15, 19].into_iter().map(|x| 1 << x).sum::<i64>())
             .get_highest_card(2);
-        let expected = [15, 19].iter().map(|x| 1 << x).sum();
+        let expected = [15, 19].into_iter().map(|x| 1 << x).sum();
         assert_eq!(output, expected);
     }
     #[test]
@@ -149,7 +158,7 @@ mod tests {
                 .sum::<i64>(),
         )
         .get_highest_card(3);
-        let expected = [49, 50, 51].iter().map(|x| 1 << x).sum();
+        let expected = [49, 50, 51].into_iter().map(|x| 1 << x).sum();
         assert_eq!(output, expected);
     }
 }

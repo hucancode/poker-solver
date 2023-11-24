@@ -6,6 +6,11 @@ use std::cmp::min;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
+// pattern for 2 cards of the same rank
+const SAME_RANK_2X: [i64; 6] = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
+// pattern for 3 cards of the same rank
+const SAME_RANK_3X: [i64; 4] = [0b1110, 0b1101, 0b1011, 0b0111];
+
 #[derive(Default)]
 pub struct Evaluator {
     straight_flush_hand: Vec<Vec<i64>>,
@@ -89,16 +94,14 @@ impl Evaluator {
             .collect();
     }
     fn build_full_house_hand(&mut self) {
-        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
-        let suit3 = [0b1110, 0b1101, 0b1011, 0b0111];
         for r1 in (0..RANK_COUNT).rev() {
             for r2 in (0..RANK_COUNT).rev() {
                 if r1 == r2 {
                     continue;
                 }
                 let mut arr: Vec<i64> = Vec::new();
-                for s1 in &suit3 {
-                    for s2 in &suit2 {
+                for s1 in &SAME_RANK_3X {
+                    for s2 in &SAME_RANK_2X {
                         let mut mask: i64 = 0;
                         mask |= s1 << (r1 * SUIT_COUNT);
                         mask |= s2 << (r2 * SUIT_COUNT);
@@ -110,11 +113,10 @@ impl Evaluator {
         }
     }
     fn build_trip_hand(&mut self) {
-        let suit3 = [0b1110, 0b1101, 0b1011, 0b0111];
         self.trip_hand = (0..RANK_COUNT)
             .rev()
             .map(|r| {
-                suit3
+                SAME_RANK_3X
                     .iter()
                     .map(|&mask| (mask as i64) << (r * SUIT_COUNT))
                     .collect()
@@ -122,12 +124,11 @@ impl Evaluator {
             .collect();
     }
     fn build_two_pair_hand(&mut self) {
-        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
         for r1 in (0..RANK_COUNT).rev() {
             for r2 in (0..r1).rev() {
                 let mut arr: Vec<i64> = Vec::new();
-                for s1 in &suit2 {
-                    for s2 in &suit2 {
+                for s1 in &SAME_RANK_2X {
+                    for s2 in &SAME_RANK_2X {
                         let mut mask: i64 = 0;
                         mask |= s1 << (r1 * SUIT_COUNT);
                         mask |= s2 << (r2 * SUIT_COUNT);
@@ -139,10 +140,9 @@ impl Evaluator {
         }
     }
     fn build_pair_hand(&mut self) {
-        let suit2 = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
         for rank in (0..RANK_COUNT).rev() {
             let mut arr: Vec<i64> = Vec::new();
-            for suit in &suit2 {
+            for suit in &SAME_RANK_2X {
                 let mask: i64 = suit << (rank * SUIT_COUNT);
                 arr.push(mask);
             }

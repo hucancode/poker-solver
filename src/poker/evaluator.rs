@@ -259,6 +259,17 @@ mod tests {
         assert_eq!(evaluator.pair_hand.iter().flatten().count(), 78);
     }
     #[test]
+    fn get_strongest_5() {
+        let mut evaluator = Evaluator::new();
+        let input = &Hand::from("AsKsQsJsTs8s9s7d2c7s");
+        let output = evaluator.get_strongest_5(input);
+        assert_eq!(output, (0, 0, 0));
+        let input = &Hand::from("AsAd9s7d2c3d");
+        let high_card = &Hand::from("9s7d3d");
+        let output = evaluator.get_strongest_5(input);
+        assert_eq!(output, (7, 0, high_card.mask));
+    }
+    #[test]
     fn straight_flush_check() {
         let mut evaluator = Evaluator::new();
         let input = &Hand::from("AsKsQsJsTs");

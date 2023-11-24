@@ -238,7 +238,7 @@ impl Evaluator {
         if rank_minor_b < rank_minor_a {
             return Ordering::Less;
         }
-        Self::compare_high_card(&Hand::from_mask(pattern_a), &Hand::from_mask(pattern_b))
+        Self::compare_high_card(&Hand::from(pattern_a), &Hand::from(pattern_b))
     }
 }
 
@@ -249,10 +249,10 @@ mod tests {
     #[test]
     fn straight_flush_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsKsQsJsTs");
+        let input = &Hand::from("AsKsQsJsTs");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (0, 0, _)));
-        let input = &Hand::from_string("KsQsJsTs9s");
+        let input = &Hand::from("KsQsJsTs9s");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (0, 1, _)));
     }
@@ -260,64 +260,64 @@ mod tests {
     #[test]
     fn quad_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsAcAdAh2s");
+        let input = &Hand::from("AsAcAdAh2s");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (1, 0, _)));
-        let input = &Hand::from_string("KsKcKdKh6d");
+        let input = &Hand::from("KsKcKdKh6d");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (1, 1, _)));
     }
     #[test]
     fn full_house_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsAcAdKhKs");
+        let input = &Hand::from("AsAcAdKhKs");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (2, 0, _)));
-        let input = &Hand::from_string("AsAcAdQhQs");
+        let input = &Hand::from("AsAcAdQhQs");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (2, 1, _)));
     }
     #[test]
     fn flush_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("As2s6sTs4s");
+        let input = &Hand::from("As2s6sTs4s");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (3, _, _)));
     }
     #[test]
     fn straight_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("As2c3d4h5d");
+        let input = &Hand::from("As2c3d4h5d");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (4, _, _)));
-        let input = &Hand::from_string("2c3d4h5d6s");
+        let input = &Hand::from("2c3d4h5d6s");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (4, _, _)));
     }
     #[test]
     fn trip_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsAcAd");
+        let input = &Hand::from("AsAcAd");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (5, 0, _)));
-        let input = &Hand::from_string("KsKcKd");
+        let input = &Hand::from("KsKcKd");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (5, 1, _)));
     }
     #[test]
     fn pair2_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsAcKdKh");
+        let input = &Hand::from("AsAcKdKh");
         let ouput = evaluator.get_strongest_5(&input);
         assert!(matches!(ouput, (6, 0, _)));
     }
     #[test]
     fn pair_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsAc");
+        let input = &Hand::from("AsAc");
         let output = evaluator.get_strongest_5(&input);
         matches!(output, (7, _, _));
-        let input = &Hand::from_string("2s2c");
+        let input = &Hand::from("2s2c");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (7, _, _)));
     }
@@ -325,7 +325,7 @@ mod tests {
     #[test]
     fn high_card_check() {
         let mut evaluator = Evaluator::new();
-        let input = &Hand::from_string("AsKc5s8d9d");
+        let input = &Hand::from("AsKc5s8d9d");
         let output = evaluator.get_strongest_5(&input);
         assert!(matches!(output, (8, _, _)));
     }
@@ -333,80 +333,64 @@ mod tests {
     #[test]
     fn aaaa_vs_kkkk() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("AsAcKdKhKsAdAh"),
-            &Hand::from_string("AsAcKdKhKsKc3d"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("AsAcKdKhKsAdAh"), &Hand::from("AsAcKdKhKsKc3d"));
         assert_eq!(output, Ordering::Greater);
     }
 
     #[test]
     fn aaaaq_vs_aaaak() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("AsAcAdAhQh3s4s"),
-            &Hand::from_string("AsAcAdAhQhKh3d"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("AsAcAdAhQh3s4s"), &Hand::from("AsAcAdAhQhKh3d"));
         assert_eq!(output, Ordering::Less);
     }
 
     #[test]
     fn _34567_vs_flush() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("5d6d7hJd4c3sJc"),
-            &Hand::from_string("5d6d7hJd4cTdKd"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("5d6d7hJd4c3sJc"), &Hand::from("5d6d7hJd4cTdKd"));
         assert_eq!(output, Ordering::Less);
     }
 
     #[test]
     fn _34567_vs_56789() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("5s6d7h3d4cTdJc"),
-            &Hand::from_string("5s6d7h9c8cTdJc"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("5s6d7h3d4cTdJc"), &Hand::from("5s6d7h9c8cTdJc"));
         assert_eq!(output, Ordering::Less);
     }
 
     #[test]
     fn _333kk_vs_333kk() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("3s3d3hKdKc6d9c"),
-            &Hand::from_string("3s3d3hKhKs6d9c"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("3s3d3hKdKc6d9c"), &Hand::from("3s3d3hKhKs6d9c"));
         assert_eq!(output, Ordering::Equal);
     }
 
     #[test]
     fn pair_vs_pair2() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("2s4d5h8dTc4d5c"),
-            &Hand::from_string("2s4d5h8hTs6d2c"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("2s4d5h8dTc4d5c"), &Hand::from("2s4d5h8hTs6d2c"));
         assert_eq!(output, Ordering::Greater);
     }
 
     #[test]
     fn pair_vs_high_card() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("2s4d5h8dTcAdKc"),
-            &Hand::from_string("2s4d5h8hTs6d2c"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("2s4d5h8dTcAdKc"), &Hand::from("2s4d5h8hTs6d2c"));
         assert_eq!(output, Ordering::Less);
     }
 
     #[test]
     fn high_card_vs_high_card() {
         let mut evaluator = Evaluator::new();
-        let output = evaluator.compare(
-            &Hand::from_string("2s4d5h8dTcAdKc"),
-            &Hand::from_string("2s4d5h8hTs6d9c"),
-        );
+        let output =
+            evaluator.compare(&Hand::from("2s4d5h8dTcAdKc"), &Hand::from("2s4d5h8hTs6d9c"));
         assert_eq!(output, Ordering::Greater);
     }
 }

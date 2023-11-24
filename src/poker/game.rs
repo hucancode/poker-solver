@@ -33,9 +33,9 @@ impl Game {
             && !self.hand_b.overlap(&self.community)
     }
     pub fn solve_by(&mut self, a: &str, b: &str, c: &str) -> Result<(usize, usize, usize), String> {
-        self.hand_a = Hand::from_string(a);
-        self.hand_b = Hand::from_string(b);
-        self.community = Hand::from_string(c);
+        self.hand_a = Hand::from(a);
+        self.hand_b = Hand::from(b);
+        self.community = Hand::from(c);
         self.solve()
     }
     pub fn solve(&mut self) -> Result<(usize, usize, usize), String> {
@@ -45,7 +45,7 @@ impl Game {
         let mut tasks = Vec::new();
         let mut q = VecDeque::new();
         q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| Hand::from_mask(1 << x));
+        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| Hand::from(1 << x));
         while let Some((a, b, c)) = q.pop_front() {
             let board = a.merge(&b).merge(&c);
             if board.len() >= 9 {
@@ -109,49 +109,49 @@ mod tests {
     #[test]
     fn revealed_game_1() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","KsKd","2s3s7s3d6s").unwrap();
+        let output = game.solve_by("AsAd", "KsKd", "2s3s7s3d6s").unwrap();
         assert_eq!((1, 0, 0), output);
     }
 
     #[test]
     fn revealed_game_2() {
         let mut game = Game::new();
-        let output = game.solve_by("3s2d","2s3d","9dTs7s4d6s").unwrap();
+        let output = game.solve_by("3s2d", "2s3d", "9dTs7s4d6s").unwrap();
         assert_eq!((0, 0, 1), output);
     }
 
     #[test]
     fn revealed_game_3() {
         let mut game = Game::new();
-        let output = game.solve_by("3s2d","2s3d","9sTs7s4d6s").unwrap();
+        let output = game.solve_by("3s2d", "2s3d", "9sTs7s4d6s").unwrap();
         assert_eq!((1, 0, 0), output);
     }
 
     #[test]
     fn board_jqka_ak_qq() {
         let mut game = Game::new();
-        let output = game.solve_by("AdKd","QsQc","QdJdAcKc").unwrap();
+        let output = game.solve_by("AdKd", "QsQc", "QdJdAcKc").unwrap();
         assert_eq!((13, 28, 3), output);
     }
 
     #[test]
     fn board_237_aa_kk() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","KsKd","2s3s7s").unwrap();
+        let output = game.solve_by("AsAd", "KsKd", "2s3s7s").unwrap();
         assert_eq!((923, 67, 0), output);
     }
 
     #[test]
     fn board_23456_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","","2s3s4s5s6s").unwrap();
+        let output = game.solve_by("AsAd", "", "2s3s4s5s6s").unwrap();
         assert_eq!((0, 44, 946), output);
     }
 
     #[test]
     fn board_2345_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","","2s3s4s5s").unwrap();
+        let output = game.solve_by("AsAd", "", "2s3s4s5s").unwrap();
         assert_eq!((42570, 2024, 946), output);
     }
 
@@ -159,7 +159,7 @@ mod tests {
     #[ignore]
     fn board_tjq_ka_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("KsAs","","TsJsQs").unwrap();
+        let output = game.solve_by("KsAs", "", "TsJsQs").unwrap();
         assert_eq!((1070190, 0, 0), output);
     }
 
@@ -167,7 +167,7 @@ mod tests {
     #[ignore]
     fn board_aak_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAc","","AdAhKs").unwrap();
+        let output = game.solve_by("AsAc", "", "AdAhKs").unwrap();
         assert_eq!((1070160, 30, 0), output);
     }
 
@@ -175,7 +175,7 @@ mod tests {
     #[ignore]
     fn board_222_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","","2c2s2d").unwrap();
+        let output = game.solve_by("AsAd", "", "2c2s2d").unwrap();
         assert_eq!((1007026, 56410, 6754), output);
     }
 
@@ -183,7 +183,7 @@ mod tests {
     #[ignore]
     fn board_234_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","","2s3s4s").unwrap();
+        let output = game.solve_by("AsAd", "", "2s3s4s").unwrap();
         assert_eq!((913275, 136214, 20701), output);
     }
 
@@ -191,7 +191,7 @@ mod tests {
     #[ignore]
     fn board_268_aa_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("AsAd","","2c6s8s").unwrap();
+        let output = game.solve_by("AsAd", "", "2c6s8s").unwrap();
         assert_eq!((902562, 166683, 945), output);
     }
 
@@ -199,7 +199,7 @@ mod tests {
     #[ignore]
     fn board_268_tq_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("TdQh","","2c6s8s").unwrap();
+        let output = game.solve_by("TdQh", "", "2c6s8s").unwrap();
         assert_eq!((400858, 657394, 11938), output);
     }
 
@@ -207,7 +207,7 @@ mod tests {
     #[ignore]
     fn board_8tq_6s2h_xx() {
         let mut game = Game::new();
-        let output = game.solve_by("6s2h","","8cTdQh").unwrap();
+        let output = game.solve_by("6s2h", "", "8cTdQh").unwrap();
         assert_eq!((139374, 818875, 111941), output);
     }
 }

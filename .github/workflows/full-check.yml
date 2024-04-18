@@ -15,3 +15,5 @@ jobs:
         run: cargo build
       - name: Run tests
         run: cargo test --lib -- --include-ignored
+      - name: Run benchmark
+        run: cargo bench

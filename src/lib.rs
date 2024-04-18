@@ -1,5 +1,5 @@
-mod poker;
-use crate::poker::Game;
+pub mod poker;
+pub use crate::poker::Game;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use wasm_bindgen::prelude::*;

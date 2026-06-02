@@ -1,6 +1,7 @@
 pub mod evaluator;
 pub mod game;
 pub mod hand;
-pub use evaluator::Evaluator;
-pub use game::Game;
+pub mod range;
+pub use game::{solve_ranges, EquityResult, Game};
 pub use hand::Hand;
+pub use range::Range;

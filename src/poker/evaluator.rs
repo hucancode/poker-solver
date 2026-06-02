@@ -1,244 +1,156 @@
-use crate::poker::hand::RANK_COUNT;
-use crate::poker::hand::SUIT_COUNT;
 use crate::poker::Hand;
-
-use std::cmp::min;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 
-// pattern for 2 cards of the same rank
-const SAME_RANK_2X: [i64; 6] = [0b1100, 0b1010, 0b1001, 0b0110, 0b0101, 0b0011];
-// pattern for 3 cards of the same rank
-const SAME_RANK_3X: [i64; 4] = [0b1110, 0b1101, 0b1011, 0b0111];
+const RANK_COUNT: u32 = 13;
 
-#[derive(Default)]
-pub struct Evaluator {
-    straight_flush_hand: Vec<Vec<i64>>,
-    quad_hand: Vec<Vec<i64>>,
-    full_house_hand: Vec<Vec<i64>>,
-    flush_hand: Vec<Vec<i64>>,
-    straight_hand: Vec<Vec<i64>>,
-    trip_hand: Vec<Vec<i64>>,
-    two_pair_hand: Vec<Vec<i64>>,
-    pair_hand: Vec<Vec<i64>>,
-    hash_map: HashMap<i64, (usize, usize, i64)>,
+fn pack_suit(mask: u64, s: u32) -> u16 {
+    let mut r = 0u16;
+    for i in 0..RANK_COUNT {
+        if (mask >> (i * 4 + s)) & 1 != 0 {
+            r |= 1u16 << i;
+        }
+    }
+    r
 }
 
+fn straight_top(rmask: u16) -> i32 {
+    let s = rmask & (rmask >> 1) & (rmask >> 2) & (rmask >> 3) & (rmask >> 4);
+    if s != 0 {
+        return 15 - s.leading_zeros() as i32 + 4;
+    }
+    if (rmask & 0xF) == 0xF && (rmask & (1 << 12)) != 0 {
+        return 3;
+    }
+    -1
+}
+
+fn top_n(rmask: u16, n: u32) -> u32 {
+    let mut result = 0u32;
+    let mut r = rmask;
+    let mut taken = 0u32;
+    while taken < n && r != 0 {
+        let hi = 15 - r.leading_zeros();
+        result = (result << 4) | hi;
+        r &= !(1u16 << hi);
+        taken += 1;
+    }
+    while taken < n {
+        result <<= 4;
+        taken += 1;
+    }
+    result
+}
+
+fn top_n_excl(rmask: u16, exclude: u16, n: u32) -> u32 {
+    top_n(rmask & !exclude, n)
+}
+
+pub fn eval(mask: u64) -> u32 {
+    let s0 = pack_suit(mask, 0);
+    let s1 = pack_suit(mask, 1);
+    let s2 = pack_suit(mask, 2);
+    let s3 = pack_suit(mask, 3);
+    let rmask = s0 | s1 | s2 | s3;
+
+    let flush_mask: u16 = if s0.count_ones() >= 5 {
+        s0
+    } else if s1.count_ones() >= 5 {
+        s1
+    } else if s2.count_ones() >= 5 {
+        s2
+    } else if s3.count_ones() >= 5 {
+        s3
+    } else {
+        0
+    };
+
+    if flush_mask != 0 {
+        let sf = straight_top(flush_mask);
+        if sf >= 0 {
+            return (8u32 << 24) | sf as u32;
+        }
+    }
+
+    let mut quad: i32 = -1;
+    let mut trips: [i32; 2] = [-1, -1];
+    let mut pairs: [i32; 3] = [-1, -1, -1];
+    for i in (0..RANK_COUNT as i32).rev() {
+        let cnt = ((mask >> (i as u32 * 4)) & 0xF).count_ones();
+        if cnt == 4 {
+            quad = i;
+        } else if cnt == 3 {
+            if trips[0] < 0 {
+                trips[0] = i;
+            } else if trips[1] < 0 {
+                trips[1] = i;
+            }
+        } else if cnt == 2 {
+            if pairs[0] < 0 {
+                pairs[0] = i;
+            } else if pairs[1] < 0 {
+                pairs[1] = i;
+            } else if pairs[2] < 0 {
+                pairs[2] = i;
+            }
+        }
+    }
+
+    if quad >= 0 {
+        let kicker = top_n_excl(rmask, 1u16 << quad, 1);
+        return (7u32 << 24) | ((quad as u32) << 4) | kicker;
+    }
+
+    if trips[0] >= 0 {
+        let mut pair_rank: i32 = -1;
+        if trips[1] >= 0 {
+            pair_rank = trips[1];
+        }
+        if pairs[0] >= 0 && pairs[0] > pair_rank {
+            pair_rank = pairs[0];
+        }
+        if pair_rank >= 0 {
+            return (6u32 << 24) | ((trips[0] as u32) << 4) | pair_rank as u32;
+        }
+    }
+
+    if flush_mask != 0 {
+        return (5u32 << 24) | top_n(flush_mask, 5);
+    }
+
+    let st = straight_top(rmask);
+    if st >= 0 {
+        return (4u32 << 24) | st as u32;
+    }
+
+    if trips[0] >= 0 {
+        let k = top_n_excl(rmask, 1u16 << trips[0], 2);
+        return (3u32 << 24) | ((trips[0] as u32) << 8) | k;
+    }
+
+    if pairs[0] >= 0 && pairs[1] >= 0 {
+        let excl = (1u16 << pairs[0]) | (1u16 << pairs[1]);
+        let k = top_n_excl(rmask, excl, 1);
+        return (2u32 << 24) | ((pairs[0] as u32) << 8) | ((pairs[1] as u32) << 4) | k;
+    }
+
+    if pairs[0] >= 0 {
+        let k = top_n_excl(rmask, 1u16 << pairs[0], 3);
+        return (1u32 << 24) | ((pairs[0] as u32) << 12) | k;
+    }
+
+    top_n(rmask, 5)
+}
+
+#[derive(Default)]
+pub struct Evaluator;
+
 impl Evaluator {
-    fn build_straight_hand(&mut self) {
-        for rank in (3..RANK_COUNT).rev() {
-            let mut arr: Vec<i64> = Vec::new();
-            let mut arr_st: Vec<i64> = Vec::new();
-            const SUIT_5: i64 = 0b11 << (2 * 5);
-            for suit in 0..SUIT_5 {
-                let mut mask: i64 = 0;
-                let card = rank * SUIT_COUNT + (suit & 0b11);
-                mask |= 1 << card;
-                let card = (rank - 1) * SUIT_COUNT + (suit >> 2 & 0b11);
-                mask |= 1 << card;
-                let card = (rank - 2) * SUIT_COUNT + (suit >> 4 & 0b11);
-                mask |= 1 << card;
-                let card = (rank - 3) * SUIT_COUNT + (suit >> 6 & 0b11);
-                mask |= 1 << card;
-
-                let low_ace = rank == 3;
-                if low_ace {
-                    let card = 12 * SUIT_COUNT + (suit >> 8 & 0b11);
-                    mask |= 1 << card;
-                } else {
-                    let card = (rank - 4) * SUIT_COUNT + (suit >> 8 & 0b11);
-                    mask |= 1 << card;
-                }
-
-                let same_suit = suit == 0b0000000000
-                    || suit == 0b0101010101
-                    || suit == 0b1010101010
-                    || suit == 0b1111111111;
-                if same_suit {
-                    arr_st.push(mask);
-                } else {
-                    arr.push(mask);
-                }
-            }
-            self.straight_hand.push(arr);
-            self.straight_flush_hand.push(arr_st);
-        }
-    }
-    fn build_flush_hand(&mut self) {
-        for r0 in (4..RANK_COUNT).rev() {
-            for r1 in (3..r0).rev() {
-                for r2 in (2..r1).rev() {
-                    for r3 in (1..r2).rev() {
-                        for r4 in (0..r3).rev() {
-                            let mut arr: Vec<i64> = Vec::new();
-                            for suit in 0..4 {
-                                let mask = [r0, r1, r2, r3, r4]
-                                    .into_iter()
-                                    .map(|x| x * SUIT_COUNT + suit)
-                                    .map(|x| 1 << x)
-                                    .sum();
-                                arr.push(mask);
-                            }
-                            self.flush_hand.push(arr);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    fn build_quad_hand(&mut self) {
-        self.quad_hand = (0..RANK_COUNT)
-            .rev()
-            .map(|r| 0b1111 << (r * SUIT_COUNT))
-            .map(|x| vec![x])
-            .collect();
-    }
-    fn build_full_house_hand(&mut self) {
-        for r1 in (0..RANK_COUNT).rev() {
-            for r2 in (0..RANK_COUNT).rev() {
-                if r1 == r2 {
-                    continue;
-                }
-                let mut arr: Vec<i64> = Vec::new();
-                for s1 in &SAME_RANK_3X {
-                    for s2 in &SAME_RANK_2X {
-                        let mut mask: i64 = 0;
-                        mask |= s1 << (r1 * SUIT_COUNT);
-                        mask |= s2 << (r2 * SUIT_COUNT);
-                        arr.push(mask);
-                    }
-                }
-                self.full_house_hand.push(arr);
-            }
-        }
-    }
-    fn build_trip_hand(&mut self) {
-        self.trip_hand = (0..RANK_COUNT)
-            .rev()
-            .map(|r| {
-                SAME_RANK_3X
-                    .iter()
-                    .map(|&mask| (mask as i64) << (r * SUIT_COUNT))
-                    .collect()
-            })
-            .collect();
-    }
-    fn build_two_pair_hand(&mut self) {
-        for r1 in (0..RANK_COUNT).rev() {
-            for r2 in (0..r1).rev() {
-                let mut arr: Vec<i64> = Vec::new();
-                for s1 in &SAME_RANK_2X {
-                    for s2 in &SAME_RANK_2X {
-                        let mut mask: i64 = 0;
-                        mask |= s1 << (r1 * SUIT_COUNT);
-                        mask |= s2 << (r2 * SUIT_COUNT);
-                        arr.push(mask);
-                    }
-                }
-                self.two_pair_hand.push(arr);
-            }
-        }
-    }
-    fn build_pair_hand(&mut self) {
-        for rank in (0..RANK_COUNT).rev() {
-            let mut arr: Vec<i64> = Vec::new();
-            for suit in &SAME_RANK_2X {
-                let mask: i64 = suit << (rank * SUIT_COUNT);
-                arr.push(mask);
-            }
-            self.pair_hand.push(arr);
-        }
-    }
-
-    // pattern, order
-    fn get_rank_in(hand: &Hand, pool: &[Vec<i64>]) -> Option<(i64, usize)> {
-        for (rank, arr) in pool.iter().enumerate() {
-            if let Some(pattern) = arr.iter().find(|&&pattern| hand.matches(pattern)) {
-                return Some((*pattern, rank));
-            }
-        }
-        None
-    }
-
-    // major rank, minor rank, matched pattern
-    fn get_strongest_5(&mut self, hand: &Hand) -> (usize, usize, i64) {
-        if let Some(&res) = self.hash_map.get(&hand.mask) {
-            return res;
-        }
-        let key = hand.mask;
-        let pools = [
-            &self.straight_flush_hand,
-            &self.quad_hand,
-            &self.full_house_hand,
-            &self.flush_hand,
-            &self.straight_hand,
-            &self.trip_hand,
-            &self.two_pair_hand,
-            &self.pair_hand,
-        ];
-        for (major_rank, pool) in pools.into_iter().enumerate() {
-            if let Some((pattern, minor_rank)) = Self::get_rank_in(hand, pool) {
-                let k = (5 - min(5, pattern.count_ones())) as usize;
-                let res = (
-                    major_rank,
-                    minor_rank,
-                    hand.get_highest_card_not_in(pattern, k),
-                );
-                self.hash_map.insert(key, res);
-                return res;
-            }
-        }
-        let res = (pools.len(), 0, hand.get_highest_card(5));
-        self.hash_map.insert(key, res);
-        res
-    }
-
     pub fn new() -> Self {
-        let mut ret: Self = Default::default();
-        ret.build_straight_hand();
-        ret.build_flush_hand();
-        ret.build_quad_hand();
-        ret.build_full_house_hand();
-        ret.build_trip_hand();
-        ret.build_two_pair_hand();
-        ret.build_pair_hand();
-        ret.hash_map = HashMap::new();
-        ret
+        Self
     }
 
-    fn compare_high_card(a: &Hand, b: &Hand) -> Ordering {
-        for rank in (0..RANK_COUNT).rev() {
-            let a_matched = a.has_rank(rank);
-            let b_matched = b.has_rank(rank);
-            if a_matched == b_matched {
-                continue;
-            }
-            if a_matched {
-                return Ordering::Greater;
-            }
-            if b_matched {
-                return Ordering::Less;
-            }
-        }
-        Ordering::Equal
-    }
-
-    pub fn compare(&mut self, a: &Hand, b: &Hand) -> Ordering {
-        let (rank_major_a, rank_minor_a, pattern_a) = self.get_strongest_5(a);
-        let (rank_major_b, rank_minor_b, pattern_b) = self.get_strongest_5(b);
-        if rank_major_a < rank_major_b {
-            return Ordering::Greater;
-        }
-        if rank_major_b < rank_major_a {
-            return Ordering::Less;
-        }
-        if rank_minor_a < rank_minor_b {
-            return Ordering::Greater;
-        }
-        if rank_minor_b < rank_minor_a {
-            return Ordering::Less;
-        }
-        Self::compare_high_card(&Hand::from(pattern_a), &Hand::from(pattern_b))
+    pub fn compare(&self, a: &Hand, b: &Hand) -> Ordering {
+        eval(a.mask).cmp(&eval(b.mask))
     }
 }
 
@@ -246,164 +158,135 @@ impl Evaluator {
 mod tests {
     use super::*;
 
+    fn cat(mask: u64) -> u32 {
+        eval(mask) >> 24
+    }
+
     #[test]
-    fn pattern_array_check() {
-        let evaluator = Evaluator::new();
-        assert_eq!(evaluator.straight_flush_hand.iter().flatten().count(), 40);
-        assert_eq!(evaluator.quad_hand.iter().flatten().count(), 13);
-        assert_eq!(evaluator.full_house_hand.iter().flatten().count(), 3744);
-        assert_eq!(evaluator.flush_hand.iter().flatten().count(), 5148);
-        assert_eq!(evaluator.straight_hand.iter().flatten().count(), 30680);
-        assert_eq!(evaluator.trip_hand.iter().flatten().count(), 52);
-        assert_eq!(evaluator.two_pair_hand.iter().flatten().count(), 2808);
-        assert_eq!(evaluator.pair_hand.iter().flatten().count(), 78);
+    fn straight_flush_cat() {
+        assert_eq!(cat(Hand::from_string("AsKsQsJsTs").mask), 8);
+        assert_eq!(cat(Hand::from_string("KsQsJsTs9s").mask), 8);
     }
     #[test]
-    fn get_strongest_5() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsKsQsJsTs8s9s7d2c7s");
-        let output = evaluator.get_strongest_5(input);
-        assert_eq!(output, (0, 0, 0));
-        let input = &Hand::from("AsAd9s7d2c3d");
-        let high_card = &Hand::from("9s7d3d");
-        let output = evaluator.get_strongest_5(input);
-        assert_eq!(output, (7, 0, high_card.mask));
+    fn quad_cat() {
+        assert_eq!(cat(Hand::from_string("AsAcAdAh2s").mask), 7);
     }
     #[test]
-    fn straight_flush_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsKsQsJsTs");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (0, 0, _)));
-        let input = &Hand::from("KsQsJsTs9s");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (0, 1, _)));
+    fn full_house_cat() {
+        assert_eq!(cat(Hand::from_string("AsAcAdKhKs").mask), 6);
     }
     #[test]
-    fn quad_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsAcAdAh2s");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (1, 0, _)));
-        let input = &Hand::from("KsKcKdKh6d");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (1, 1, _)));
+    fn flush_cat() {
+        assert_eq!(cat(Hand::from_string("As2s6sTs4s").mask), 5);
     }
     #[test]
-    fn full_house_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsAcAdKhKs");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (2, 0, _)));
-        let input = &Hand::from("AsAcAdQhQs");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (2, 1, _)));
+    fn straight_cat() {
+        assert_eq!(cat(Hand::from_string("As2c3d4h5d").mask), 4);
+        assert_eq!(cat(Hand::from_string("2c3d4h5d6s").mask), 4);
+        assert_eq!(cat(Hand::from_string("Ts9c8d7h6d").mask), 4);
     }
     #[test]
-    fn flush_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("As2s6sTs4s");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (3, _, _)));
+    fn trip_cat() {
+        assert_eq!(cat(Hand::from_string("AsAcAd2h5d").mask), 3);
     }
     #[test]
-    fn straight_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("As2c3d4h5d");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (4, _, _)));
-        let input = &Hand::from("2c3d4h5d6s");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (4, _, _)));
+    fn two_pair_cat() {
+        assert_eq!(cat(Hand::from_string("AsAcKdKh2s").mask), 2);
     }
     #[test]
-    fn trip_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsAcAd");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (5, 0, _)));
-        let input = &Hand::from("KsKcKd");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (5, 1, _)));
+    fn pair_cat() {
+        assert_eq!(cat(Hand::from_string("AsAc5h8d9c").mask), 1);
     }
     #[test]
-    fn pair2_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsAcKdKh");
-        let ouput = evaluator.get_strongest_5(&input);
-        assert!(matches!(ouput, (6, 0, _)));
+    fn high_card_cat() {
+        assert_eq!(cat(Hand::from_string("AsKc5s8d9d").mask), 0);
     }
-    #[test]
-    fn pair_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsAc");
-        let output = evaluator.get_strongest_5(&input);
-        matches!(output, (7, _, _));
-        let input = &Hand::from("2s2c");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (7, _, _)));
-    }
-    #[test]
-    fn high_card_check() {
-        let mut evaluator = Evaluator::new();
-        let input = &Hand::from("AsKc5s8d9d");
-        let output = evaluator.get_strongest_5(&input);
-        assert!(matches!(output, (8, _, _)));
-    }
+
     #[test]
     fn aaaa_vs_kkkk() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("AsAcKdKhKsAdAh"), &Hand::from("AsAcKdKhKsKc3d"));
-        assert_eq!(output, Ordering::Greater);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("AsAcKdKhKsAdAh"),
+            &Hand::from_string("AsAcKdKhKsKc3d"),
+        );
+        assert_eq!(out, Ordering::Greater);
     }
+
     #[test]
     fn aaaaq_vs_aaaak() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("AsAcAdAhQh3s4s"), &Hand::from("AsAcAdAhQhKh3d"));
-        assert_eq!(output, Ordering::Less);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("AsAcAdAhQh3s4s"),
+            &Hand::from_string("AsAcAdAhQhKh3d"),
+        );
+        assert_eq!(out, Ordering::Less);
     }
+
     #[test]
-    fn _34567_vs_flush() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("5d6d7hJd4c3sJc"), &Hand::from("5d6d7hJd4cTdKd"));
-        assert_eq!(output, Ordering::Less);
+    fn straight_vs_flush() {
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("5d6d7hJd4c3sJc"),
+            &Hand::from_string("5d6d7hJd4cTdKd"),
+        );
+        assert_eq!(out, Ordering::Less);
     }
+
     #[test]
     fn _34567_vs_56789() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("5s6d7h3d4cTdJc"), &Hand::from("5s6d7h9c8cTdJc"));
-        assert_eq!(output, Ordering::Less);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("5s6d7h3d4cTdJc"),
+            &Hand::from_string("5s6d7h9c8cTdJc"),
+        );
+        assert_eq!(out, Ordering::Less);
     }
+
     #[test]
     fn _333kk_vs_333kk() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("3s3d3hKdKc6d9c"), &Hand::from("3s3d3hKhKs6d9c"));
-        assert_eq!(output, Ordering::Equal);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("3s3d3hKdKc6d9c"),
+            &Hand::from_string("3s3d3hKhKs6d9c"),
+        );
+        assert_eq!(out, Ordering::Equal);
     }
+
     #[test]
     fn pair_vs_pair2() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("2s4d5h8dTc4d5c"), &Hand::from("2s4d5h8hTs6d2c"));
-        assert_eq!(output, Ordering::Greater);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("2s4d5h8dTc4d5c"),
+            &Hand::from_string("2s4d5h8hTs6d2c"),
+        );
+        assert_eq!(out, Ordering::Greater);
     }
+
     #[test]
     fn pair_vs_high_card() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("2s4d5h8dTcAdKc"), &Hand::from("2s4d5h8hTs6d2c"));
-        assert_eq!(output, Ordering::Less);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("2s4d5h8dTcAdKc"),
+            &Hand::from_string("2s4d5h8hTs6d2c"),
+        );
+        assert_eq!(out, Ordering::Less);
     }
+
     #[test]
     fn high_card_vs_high_card() {
-        let mut evaluator = Evaluator::new();
-        let output =
-            evaluator.compare(&Hand::from("2s4d5h8dTcAdKc"), &Hand::from("2s4d5h8hTs6d9c"));
-        assert_eq!(output, Ordering::Greater);
+        let e = Evaluator::new();
+        let out = e.compare(
+            &Hand::from_string("2s4d5h8dTcAdKc"),
+            &Hand::from_string("2s4d5h8hTs6d9c"),
+        );
+        assert_eq!(out, Ordering::Greater);
+    }
+
+    #[test]
+    fn wheel_straight() {
+        let e = Evaluator::new();
+        let wheel = Hand::from_string("As2c3d4h5d");
+        let six_high = Hand::from_string("2s3c4d5h6h");
+        assert_eq!(e.compare(&wheel, &six_high), Ordering::Less);
     }
 }

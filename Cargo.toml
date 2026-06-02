@@ -10,7 +10,7 @@ readme = "README.md"
 repository = "https://github.com/hucancode/poker-solver"
 
 [dependencies]
-wasm-bindgen = { version = "0.2.63" }
+wasm-bindgen = { version = "0.2.122" }
 
 [profile.release]
 lto = true

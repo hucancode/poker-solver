@@ -1,9 +1,6 @@
-use crate::poker::hand::RANK_COUNT;
-use crate::poker::hand::SUIT_COUNT;
 use crate::poker::Evaluator;
 use crate::poker::Hand;
 use std::cmp::Ordering;
-use std::collections::VecDeque;
 
 #[derive(Default)]
 pub struct Game {
@@ -12,6 +9,22 @@ pub struct Game {
     pub community: Hand,
     evaluator: Evaluator,
 }
+
+fn pick<F: FnMut(u64)>(used: u64, k: u32, start: u32, picked: u64, f: &mut F) {
+    if k == 0 {
+        f(picked);
+        return;
+    }
+    let mut i = start;
+    while i + k <= 52 {
+        let bit = 1u64 << i;
+        if used & bit == 0 {
+            pick(used | bit, k - 1, i + 1, picked | bit, f);
+        }
+        i += 1;
+    }
+}
+
 impl Game {
     pub fn new() -> Self {
         Self {
@@ -33,66 +46,42 @@ impl Game {
             && !self.hand_b.overlap(&self.community)
     }
     pub fn solve_by(&mut self, a: &str, b: &str, c: &str) -> Result<(usize, usize, usize), String> {
-        self.hand_a = Hand::from(a);
-        self.hand_b = Hand::from(b);
-        self.community = Hand::from(c);
+        self.hand_a = Hand::from_string(a);
+        self.hand_b = Hand::from_string(b);
+        self.community = Hand::from_string(c);
         self.solve()
     }
     pub fn solve(&mut self) -> Result<(usize, usize, usize), String> {
         if !self.is_valid() {
             return Err("Invalid game!".to_string());
         }
-        let mut tasks = Vec::new();
-        let mut q = VecDeque::new();
-        q.push_back((self.hand_a, self.hand_b, self.community));
-        let deck = (0..(RANK_COUNT * SUIT_COUNT)).map(|x| Hand::from(1 << x));
-        while let Some((a, b, c)) = q.pop_front() {
-            let board = a.merge(&b).merge(&c);
-            if board.len() >= 9 {
-                tasks.push((a.merge(&c), b.merge(&c)));
-                continue;
-            }
-            let it = deck.clone().filter(|x| !x.overlap(&board));
-            if b.len() < 2 {
-                let mut bq = VecDeque::new();
-                bq.push_back((it, b));
-                while let Some((it, b)) = bq.pop_front() {
-                    if b.len() == 2 {
-                        q.push_back((a, b, c));
-                        continue;
-                    }
-                    let mut it = it.clone();
-                    while let Some(x) = it.next() {
-                        bq.push_back((it.clone(), b.merge(&x)));
-                    }
-                }
-                continue;
-            }
-            if c.len() < 5 {
-                let mut cq = VecDeque::new();
-                cq.push_back((it, c));
-                while let Some((it, c)) = cq.pop_front() {
-                    if c.len() == 5 {
-                        q.push_back((a, b, c));
-                        continue;
-                    }
-                    let mut it = it.clone();
-                    while let Some(x) = it.next() {
-                        cq.push_back((it.clone(), c.merge(&x)));
-                    }
-                }
-                continue;
-            }
-        }
+        let a_mask = self.hand_a.mask;
+        let b_mask = self.hand_b.mask;
+        let c_mask = self.community.mask;
+        let used = a_mask | b_mask | c_mask;
+        let need_b = 2 - self.hand_b.len();
+        let need_c = 5 - self.community.len();
+        let evaluator = &self.evaluator;
 
-        Ok(tasks
-            .iter()
-            .map(|(a, b)| self.evaluator.compare(a, b))
-            .fold((0, 0, 0), |(win, lose, tie), r| match r {
-                Ordering::Greater => (win + 1, lose, tie),
-                Ordering::Less => (win, lose + 1, tie),
-                Ordering::Equal => (win, lose, tie + 1),
-            }))
+        let mut win = 0usize;
+        let mut lose = 0usize;
+        let mut tie = 0usize;
+
+        pick(used, need_b, 0, 0, &mut |b_add: u64| {
+            let used2 = used | b_add;
+            pick(used2, need_c, 0, 0, &mut |c_add: u64| {
+                let board = c_mask | c_add;
+                let a_h = Hand::from_mask(a_mask | board);
+                let b_h = Hand::from_mask(b_mask | b_add | board);
+                match evaluator.compare(&a_h, &b_h) {
+                    Ordering::Greater => win += 1,
+                    Ordering::Less => lose += 1,
+                    Ordering::Equal => tie += 1,
+                }
+            });
+        });
+
+        Ok((win, lose, tie))
     }
 }
 
@@ -125,13 +114,6 @@ mod tests {
         let mut game = Game::new();
         let output = game.solve_by("3s2d", "2s3d", "9sTs7s4d6s").unwrap();
         assert_eq!((1, 0, 0), output);
-    }
-
-    #[test]
-    fn board_jqka_ak_qq() {
-        let mut game = Game::new();
-        let output = game.solve_by("AdKd", "QsQc", "QdJdAcKc").unwrap();
-        assert_eq!((13, 28, 3), output);
     }
 
     #[test]

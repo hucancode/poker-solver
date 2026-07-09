@@ -68,10 +68,10 @@ The program will output all possible game outcomes. Here is an example:
 🎴 Your hand:               A♠A♦
 🎴 Their hand:
 
-👑 Win:                   976740
-💸 Lose:                   92820
-🤝 Tie:                      630
-🧮 You win:            91.26791%
+👑 Win:                   963174
+💸 Lose:                  105684
+🤝 Tie:                     1332
+🧮 You win:            90.000275%
 ```
 
 ## Methodology
@@ -90,24 +90,41 @@ Here are the number of possible outcome in each given game phase
 | ----------------- | --------------------- | -------------------- | ------------------------- |
 | Possible Outcomes | 1070190               | 45540                | 990                       |
 
-Here are some tests I made, you can run those tests yourself with
+Timings below are whole-process runs of the release binary, measured with
+[hyperfine](https://github.com/sharkdp/hyperfine) (8 runs each, ~0.5ms
+process startup included):
+
+```bash
+cargo build --release
+hyperfine "./target/release/poker-solver 2c6s8s AsAd"
+```
+
+| Test Case                                    | Game Code        | Solve Time       | Possibility |
+| -------------------------------------------- | ---------------- | ---------------- | ----------- |
+| Both hands revealed, Flop                    | AsAd,KsKd,2s3s7s | 0.6ms ± 0.1ms    | 990         |
+| All community cards revealed                 | AsAd,,2s3s4s5s6s | 0.6ms ± 0.2ms    | 990         |
+| Turn                                         | AsAd,,2s3s4s5s   | 4.3ms ± 0.1ms    | 45540       |
+| Early royal straight-flush                   | KsAs,,TsJsQs     | 96.9ms ± 6.5ms   | 1070190     |
+| Early quad                                   | AsAc,,AdAhKs     | 96.2ms ± 2.6ms   | 1070190     |
+| Early full-house                             | AsAd,,2c2s2d     | 102.4ms ± 1.4ms  | 1070190     |
+| Early pair of Ace, +1 card to flush/straight | AsAd,,2s3s4s     | 104.3ms ± 1.5ms  | 1070190     |
+| Early pair of Ace                            | AsAd,,2c6s8s     | 109.4ms ± 2.8ms  | 1070190     |
+| High cards                                   | TdQh,,2c6s8s     | 110.1ms ± 1.1ms  | 1070190     |
+| Low cards                                    | 6s2h,,8cTdQh     | 110.9ms ± 1.6ms  | 1070190     |
+
+- Blind case (flop, both villain cards hidden) enumerates all 1,070,190 outcomes in ~110ms
+- With `wasm` version, expect ~2x slower
+
+### Tests
+
+Run the correctness test suite with
 
 ```bash
 cargo test
 ```
 
-| Test Case                                    | Game Code        | Solve Time      | Possibility |
-| -------------------------------------------- | ---------------- | --------------- | ----------- |
-| Both hands revealed, Flop                    | AsAd,KsKd,2s3s7s | 84.6ms ± 2.2ms  | 990         |
-| All community cards revealed                 | AsAd,,2s3s4s5s6s | 50.2ms ± 2.7ms  | 990         |
-| Turn                                         | AsAd,,2s3s4s5s   | 290.0ms ± 2.9ms | 45540       |
-| Early royal straight-flush                   | KsAs,,TsJsQs     | 3.721s ± 0.069s | 1070190     |
-| Early quad                                   | AsAc,,AdAhKs     | 4.334s ± 0.082s | 1070190     |
-| Early full-house                             | AsAd,,2c2s2d     | 2.787s ± 0.033s | 1070190     |
-| Early pair of Ace, +1 card to flush/straight | AsAd,,2s3s4s     | 3.999s ± 0.029s | 1070190     |
-| Early pair of Ace                            | AsAd,,2c6s8s     | 4.412s ± 0.012s | 1070190     |
-| High cards                                   | TdQh,,2c6s8s     | 4.415s ± 0.031s | 1070190     |
-| Low cards                                    | 6s2h,,8cTdQh     | 4.282s ± 0.019s | 1070190     |
+Run the [criterion](https://github.com/bheisler/criterion.rs) benchmark suite with
 
-- The program perform relatively well given the large number of possibilites
-- With `wasm` version, expect 2~4 times slower (which is ~16 seconds worse case, still acceptable by my standard)
+```bash
+cargo bench
+```

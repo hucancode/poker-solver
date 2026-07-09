@@ -24,13 +24,16 @@ cargo build
 
 ### Build for the web
 
-You need [wasm-pack](https://rustwasm.github.io/wasm-pack/)
-
 ```bash
-wasm-pack build --target web
+rustup target add wasm32-unknown-unknown
+cargo build --target wasm32-unknown-unknown
 ```
 
-Output would be at `pkg` folder, install it using `npm install ./path/to/pkg/`
+Output is `target/wasm32-unknown-unknown/release/poker_solver.wasm`.
+Load it with a small hand-written glue (see `solver.js` in the consuming
+project): `alloc`/`dealloc` for buffers, `solve` writes `[win, lose, tie]`
+as 3×u32, `solve_multi` writes `[iterations, win, tie, lose, equity...]`
+as f64, errors via `last_error_ptr`/`last_error_len`.
 
 ## Run
 
